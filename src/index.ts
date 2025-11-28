@@ -3,11 +3,12 @@
 // ====== Public Types ===============================================
 
 export type ScrollLockTarget =
-  | "body"
-  | "documentElement"
-  | "html"
-  | "window"
-  | HTMLElement;
+  | HTMLElement
+  | SVGElement
+  | Window
+  | Document
+  | null
+  | undefined;
 
 export interface ScrollLockOptions {
   /**
@@ -41,13 +42,13 @@ interface LockState {
 /**
  * 以 HTMLElement 為 key 的 WeakMap，用來儲存每個 element 的 lock 狀態
  */
-const lockStates = new WeakMap<HTMLElement, LockState>();
+const lockStates = new WeakMap<HTMLElement | SVGElement, LockState>();
 
 /**
  * 因為 WeakMap 無法被直接遍歷，所以額外用一個 Set 記住目前被 lock 過的 elements，
  * 讓 clearAllScrollLocks() 可以遍歷並還原。
  */
-const lockedElements = new Set<HTMLElement>();
+const lockedElements = new Set<HTMLElement | SVGElement>();
 
 /**
  * 判斷是否在瀏覽器環境。
@@ -57,43 +58,21 @@ function isBrowser(): boolean {
 }
 
 /**
- * 取目前的 scrolling element
- * - 非瀏覽器環境會回傳 null
- */
-function getScrollingElement(): HTMLElement | undefined {
-  if (!isBrowser()) return undefined;
-
-  return (
-    (document.scrollingElement as HTMLElement | undefined) ||
-    document.documentElement ||
-    document.body
-  );
-}
-
-/**
  * 把 ScrollLockTarget 轉成實際的 HTMLElement
  * - 非瀏覽器環境會回傳 null
  */
-function resolveTarget(target?: ScrollLockTarget): HTMLElement | undefined {
-  if (!isBrowser()) return undefined;
+function resolveTarget(
+  target?: HTMLElement | SVGElement | Window | Document | null | undefined,
+): HTMLElement | SVGElement | undefined {
+  if (!target) return document.body;
 
-  if (!target || target === "body") {
-    return document.body;
-  }
+  if (typeof Window !== "undefined" && target instanceof Window)
+    return target.document.documentElement;
 
-  if (target === "documentElement" || target === "html") {
-    return document.documentElement;
-  }
-
-  if (target === "window") {
-    return getScrollingElement();
-  }
-
-  // 在瀏覽器環境下，才會有 HTMLElement 這個 global constructor
-  if (target instanceof HTMLElement) {
+  if (typeof Document !== "undefined" && target instanceof Document)
+    return target.documentElement;
+  if (target instanceof HTMLElement || target instanceof SVGElement)
     return target;
-  }
-
   return undefined;
 }
 
@@ -101,7 +80,7 @@ function resolveTarget(target?: ScrollLockTarget): HTMLElement | undefined {
  * 對指定 element 套用「鎖定滾動」的 style。
  * - 僅在瀏覽器環境下會被呼叫（呼叫前需先經過 resolveTarget）
  */
-function applyLock(el: HTMLElement): void {
+function applyLock(el: HTMLElement | SVGElement): void {
   let state = lockStates.get(el);
 
   if (!state) {
@@ -129,7 +108,7 @@ function applyLock(el: HTMLElement): void {
  * 還原指定 element 的 style 並移除 state。
  * - 僅在瀏覽器環境下會被呼叫
  */
-function restoreElement(el: HTMLElement, state: LockState): void {
+function restoreElement(el: HTMLElement | SVGElement, state: LockState): void {
   // 還原 overflow
   if (state.originalOverflow) {
     el.style.overflow = state.originalOverflow;
