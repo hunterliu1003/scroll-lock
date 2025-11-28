@@ -1,9 +1,9 @@
-# packageName
+# @hunterliu/scroll-lock
 
 <!-- automd:badges color=yellow -->
 
-[![npm version](https://img.shields.io/npm/v/packageName?color=yellow)](https://npmjs.com/package/packageName)
-[![npm downloads](https://img.shields.io/npm/dm/packageName?color=yellow)](https://npm.chart.dev/packageName)
+[![npm version](https://img.shields.io/npm/v/@hunterliu/scroll-lock?color=yellow)](https://npmjs.com/package/@hunterliu/scroll-lock)
+[![npm downloads](https://img.shields.io/npm/dm/@hunterliu/scroll-lock?color=yellow)](https://npm.chart.dev/@hunterliu/scroll-lock)
 
 <!-- /automd -->
 
@@ -15,7 +15,7 @@ Install the package:
 
 ```sh
 # ✨ Auto-detect (supports npm, yarn, pnpm, deno and bun)
-npx nypm install packageName
+npx nypm install @hunterliu/scroll-lock
 ```
 
 Import:
@@ -28,7 +28,7 @@ Import:
 import {} from "pkg";
 ```
 
-**CDN** (Deno, Bun and Browsers)
+**CDN** (Deno and Browsers)
 
 ```js
 import {} from "https://esm.sh/pkg";
@@ -54,11 +54,11 @@ import {} from "https://esm.sh/pkg";
 
 <!-- automd:contributors license=MIT -->
 
-Published under the [MIT](https://github.com/unjs/packageName/blob/main/LICENSE) license.
-Made by [community](https://github.com/unjs/packageName/graphs/contributors) 💛
+Published under the [MIT](https://github.com/hunterliu1003/scroll-lock/blob/main/LICENSE) license.
+Made by [community](https://github.com/hunterliu1003/scroll-lock/graphs/contributors) 💛
 <br><br>
-<a href="https://github.com/unjs/packageName/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=unjs/packageName" />
+<a href="https://github.com/hunterliu1003/scroll-lock/graphs/contributors">
+<img src="https://contrib.rocks/image?repo=hunterliu1003/scroll-lock" />
 </a>
 
 <!-- /automd -->
