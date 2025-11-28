@@ -1,8 +1,6 @@
 # Changelog
 
-
 ## v0.0.1
-
 
 ### 🚀 Enhancements
 
@@ -16,4 +14,3 @@
 ### ❤️ Contributors
 
 - Hunter ([@hunterliu1003](https://github.com/hunterliu1003))
-
