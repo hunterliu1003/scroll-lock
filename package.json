@@ -2,6 +2,7 @@
   "name": "@hunterliu/scroll-lock",
   "version": "0.0.2",
   "description": "",
+  "private": false,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hunterliu1003/scroll-lock.git"
