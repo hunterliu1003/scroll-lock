@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.0.3
+
+[compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.2...v0.0.3)
+
+### 🏡 Chore
+
+- Private false ([de888df](https://github.com/hunterliu1003/scroll-lock/commit/de888df))
+- Lint ([73e345a](https://github.com/hunterliu1003/scroll-lock/commit/73e345a))
+
+### ❤️ Contributors
+
+- Hunter ([@hunterliu1003](https://github.com/hunterliu1003))
+
 ## v0.0.2
 
 [compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.1...v0.0.2)
