@@ -40,21 +40,17 @@ interface LockState {
 
 /**
  * 以 HTMLElement 為 key 的 WeakMap，用來儲存每個 element 的 lock 狀態
- * - WeakMap 本身在 Node/SSR 環境是安全的
  */
 const lockStates = new WeakMap<HTMLElement, LockState>();
 
 /**
  * 因為 WeakMap 無法被直接遍歷，所以額外用一個 Set 記住目前被 lock 過的 elements，
  * 讓 clearAllScrollLocks() 可以遍歷並還原。
- *
- * - Set 在 Node/SSR 環境也安全
  */
 const lockedElements = new Set<HTMLElement>();
 
 /**
  * 判斷是否在瀏覽器環境。
- * - SSR / Node 環境會回傳 false，所有 public API 都會在一開始就 early return。
  */
 function isBrowser(): boolean {
   return globalThis.window !== undefined && typeof document !== "undefined";
@@ -159,19 +155,11 @@ function restoreElement(el: HTMLElement, state: LockState): void {
   lockedElements.delete(el);
 }
 
-// ====== Public API (SSR-safe) ======================================
-
 /**
  * 鎖定指定 target 的滾動（預設為 body）。
- *
- * SSR-safe：
- * - 在非瀏覽器環境 (Node / SSR render) 中，這個函式會直接 no-op（什麼都不做）。
  */
 export function lockScroll(options?: ScrollLockOptions): void {
-  if (!isBrowser()) {
-    // SSR / Node 環境：不做任何事
-    return;
-  }
+  if (!isBrowser()) return;
 
   const el = resolveTarget(options?.target);
   if (!el) return;
@@ -190,15 +178,9 @@ export function lockScroll(options?: ScrollLockOptions): void {
  * 強制模式：
  * - force = true
  * - 不管目前計數是多少，立刻還原 style 並清除 state
- *
- * SSR-safe：
- * - 在非瀏覽器環境 (Node / SSR render) 中，這個函式會直接 no-op（什麼都不做）。
  */
 export function unlockScroll(options?: ScrollUnlockOptions): void {
-  if (!isBrowser()) {
-    // SSR / Node 環境：不做任何事
-    return;
-  }
+  if (!isBrowser()) return;
 
   const target = options?.target;
   const force = options?.force ?? false;
@@ -224,15 +206,9 @@ export function unlockScroll(options?: ScrollUnlockOptions): void {
 /**
  * 判斷指定 target 目前是否被這個函式庫鎖定。
  * - 不看 computed style，只看內部的 lock 計數。
- *
- * SSR-safe：
- * - 在非瀏覽器環境永遠回傳 false。
  */
 export function isScrollLocked(target?: ScrollLockTarget): boolean {
-  if (!isBrowser()) {
-    // SSR / Node 環境：不存在鎖定概念，固定回傳 false
-    return false;
-  }
+  if (!isBrowser()) return false;
 
   const el = resolveTarget(target);
   if (!el) return false;
@@ -246,15 +222,9 @@ export function isScrollLocked(target?: ScrollLockTarget): boolean {
  * - 無論有多少 target、每個 target 的 count 是多少
  * - 一律還原所有元素的原始 inline style
  * - 並清空內部的 state
- *
- * SSR-safe：
- * - 在非瀏覽器環境為 no-op。
  */
 export function clearAllScrollLocks(): void {
-  if (!isBrowser()) {
-    // SSR / Node 環境：不做任何事
-    return;
-  }
+  if (!isBrowser()) return;
 
   // 因為有 lockedElements（Set），可以安全地遍歷所有已經被鎖過的元素
   for (const el of lockedElements) {
