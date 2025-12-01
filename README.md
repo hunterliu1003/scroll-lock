@@ -152,4 +152,3 @@ Check if target is currently locked.
 ### `clearAllScrollLocks()`
 
 Clear all scroll locks on all targets.
-
