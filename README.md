@@ -14,6 +14,7 @@ A lightweight, SSR-safe scroll locking library with reference counting support. 
 - 🔒 **Reference counting** - Multiple locks on the same element work properly
 - 🌐 **SSR-safe** - Works seamlessly in server-side rendering environments
 - 🎯 **Multiple targets** - Lock body, documentElement, or any HTMLElement
+- 📱 **iOS support** - Special touch event handling for iOS devices
 - 🔧 **TypeScript** - Full type safety out of the box
 - ⚡ **Lightweight** - Minimal bundle size with zero dependencies
 - 🧹 **Clean restoration** - Properly restores original overflow styles
@@ -34,13 +35,7 @@ Import:
 **ESM** (Node.js, Bun, Deno)
 
 ```js
-import {} from "@hunterliu/scroll-lock";
-```
-
-**CDN** (Deno and Browsers)
-
-```js
-import {} from "https://esm.sh/@hunterliu/scroll-lock";
+import { lockScroll, unlockScroll, isScrollLocked, clearAllScrollLocks } from "@hunterliu/scroll-lock";
 ```
 
 <!-- /automd -->
@@ -88,11 +83,8 @@ const modal = document.querySelector(".modal");
 // Lock specific element
 lockScroll({ target: modal });
 
-// Lock document element
-lockScroll({ target: "documentElement" });
-
-// Lock window/scrolling element
-lockScroll({ target: "window" });
+// Check if scroll is locked
+console.log(isScrollLocked(modal)); // true
 
 // Unlock with same target
 unlockScroll({ target: modal });
@@ -131,14 +123,12 @@ Lock scroll on target element.
 
 **Options:**
 
-- `target?: ScrollLockTarget` - Element to lock (default: `"body"`)
+- `target?: ScrollLockTarget` - Element to lock (default: `document.body`)
 
 **ScrollLockTarget:**
 
-- `"body"` (default) - Document body
-- `"documentElement"` or `"html"` - Document element
-- `"window"` - Scrolling element
-- `HTMLElement` - Any DOM element
+- `HTMLElement | SVGElement` - Any DOM element
+- `null | undefined` - Defaults to document.body
 
 ### `unlockScroll(options?)`
 
@@ -146,7 +136,7 @@ Unlock scroll on target element.
 
 **Options:**
 
-- `target?: ScrollLockTarget` - Element to unlock (default: `"body"`)
+- `target?: ScrollLockTarget` - Element to unlock (default: `document.body`)
 - `force?: boolean` - Ignore reference counting (default: `false`)
 
 ### `isScrollLocked(target?)`
@@ -155,7 +145,7 @@ Check if target is currently locked.
 
 **Parameters:**
 
-- `target?: ScrollLockTarget` - Element to check (default: `"body"`)
+- `target?: ScrollLockTarget` - Element to check (default: `document.body`)
 
 **Returns:** `boolean`
 
@@ -163,37 +153,3 @@ Check if target is currently locked.
 
 Clear all scroll locks on all targets.
 
-## Development
-
-<details>
-
-<summary>local development</summary>
-
-- Clone this repository
-- Install latest LTS version of [Node.js](https://nodejs.org/en/)
-- Enable [Corepack](https://github.com/nodejs/corepack) using `corepack enable`
-- Install dependencies using `pnpm install`
-- Run interactive tests using `pnpm dev`
-
-</details>
-
-## License
-
-<!-- automd:contributors license=MIT -->
-
-Published under the [MIT](https://github.com/hunterliu1003/scroll-lock/blob/main/LICENSE) license.
-Made by [community](https://github.com/hunterliu1003/scroll-lock/graphs/contributors) 💛
-<br><br>
-<a href="https://github.com/hunterliu1003/scroll-lock/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=hunterliu1003/scroll-lock" />
-</a>
-
-<!-- /automd -->
-
-<!-- automd:with-automd -->
-
----
-
-_🤖 auto updated with [automd](https://automd.unjs.io)_
-
-<!-- /automd -->

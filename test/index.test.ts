@@ -8,10 +8,10 @@ import {
 
 describe("scroll-lock", () => {
   beforeEach(() => {
-    // 每個測試前都強制清除所有 lock，避免互相影響
+    // Force clear all locks before each test to avoid interference
     clearAllScrollLocks();
 
-    // 確保 body style 是乾淨的
+    // Ensure body style is clean
     document.body.style.overflow = "";
     document.body.style.overflowX = "";
     document.body.style.overflowY = "";
@@ -21,12 +21,12 @@ describe("scroll-lock", () => {
     expect(isScrollLocked()).toBe(false);
     expect(document.body.style.overflow).toBe("");
 
-    lockScroll(); // 預設 target 為 body
+    lockScroll(); // Default target is body
 
     expect(isScrollLocked()).toBe(true);
     expect(document.body.style.overflow).toBe("hidden");
 
-    unlockScroll(); // 預設 target 為 body
+    unlockScroll(); // Default target is body
 
     expect(isScrollLocked()).toBe(false);
     expect(document.body.style.overflow).toBe("");
@@ -36,16 +36,16 @@ describe("scroll-lock", () => {
     lockScroll();
     lockScroll();
 
-    // 兩次 lock 後仍然只會是 overflow: hidden
+    // After two locks, overflow is still just hidden
     expect(isScrollLocked()).toBe(true);
     expect(document.body.style.overflow).toBe("hidden");
 
-    // 第一次 unlock 不還原 style
+    // First unlock doesn't restore style
     unlockScroll();
     expect(isScrollLocked()).toBe(true);
     expect(document.body.style.overflow).toBe("hidden");
 
-    // 第二次 unlock 才真的解鎖
+    // Second unlock actually unlocks
     unlockScroll();
     expect(isScrollLocked()).toBe(false);
     expect(document.body.style.overflow).toBe("");
@@ -74,14 +74,14 @@ describe("scroll-lock", () => {
     expect(document.body.style.overflow).toBe("hidden");
     expect(panel.style.overflow).toBe("hidden");
 
-    // 解鎖 panel，不影響 body
+    // Unlock panel, doesn't affect body
     unlockScroll({ target: panel });
-    expect(isScrollLocked()).toBe(true); // body 仍鎖定
+    expect(isScrollLocked()).toBe(true); // body still locked
     expect(isScrollLocked(panel)).toBe(false);
     expect(document.body.style.overflow).toBe("hidden");
     expect(panel.style.overflow).toBe("");
 
-    // 再解鎖 body
+    // Unlock body
     unlockScroll();
     expect(isScrollLocked()).toBe(false);
     expect(document.body.style.overflow).toBe("");
@@ -93,7 +93,7 @@ describe("scroll-lock", () => {
 
     lockScroll(); // body
     lockScroll({ target: panel });
-    lockScroll({ target: panel }); // panel lock 兩次
+    lockScroll({ target: panel }); // panel locked twice
 
     expect(isScrollLocked()).toBe(true);
     expect(isScrollLocked(panel)).toBe(true);
