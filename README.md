@@ -12,7 +12,7 @@ A lightweight, SSR-safe scroll locking library with reference counting support. 
 ## Features
 
 - 🔒 **Reference counting** - Multiple locks on the same element work properly
-- 🌐 **SSR-safe** - Works seamlessly in server-side rendering environments  
+- 🌐 **SSR-safe** - Works seamlessly in server-side rendering environments
 - 🎯 **Multiple targets** - Lock body, documentElement, or any HTMLElement
 - 🔧 **TypeScript** - Full type safety out of the box
 - ⚡ **Lightweight** - Minimal bundle size with zero dependencies
@@ -34,13 +34,13 @@ Import:
 **ESM** (Node.js, Bun, Deno)
 
 ```js
-import { lockScroll, unlockScroll, isScrollLocked, clearAllScrollLocks } from "@hunterliu/scroll-lock";
+import {} from "@hunterliu/scroll-lock";
 ```
 
 **CDN** (Deno and Browsers)
 
 ```js
-import { lockScroll, unlockScroll, isScrollLocked, clearAllScrollLocks } from "https://esm.sh/@hunterliu/scroll-lock";
+import {} from "https://esm.sh/@hunterliu/scroll-lock";
 ```
 
 <!-- /automd -->
@@ -48,7 +48,11 @@ import { lockScroll, unlockScroll, isScrollLocked, clearAllScrollLocks } from "h
 ## Basic Usage
 
 ```js
-import { lockScroll, unlockScroll, isScrollLocked } from "@hunterliu/scroll-lock";
+import {
+  lockScroll,
+  unlockScroll,
+  isScrollLocked,
+} from "@hunterliu/scroll-lock";
 
 // Lock body scroll (default target)
 lockScroll();
@@ -56,7 +60,7 @@ lockScroll();
 // Check if scroll is locked
 console.log(isScrollLocked()); // true
 
-// Unlock body scroll  
+// Unlock body scroll
 unlockScroll();
 
 console.log(isScrollLocked()); // false
@@ -79,16 +83,16 @@ unlockScroll(); // count: 0 - now unlocked
 Lock scroll on specific elements:
 
 ```js
-const modal = document.querySelector('.modal');
+const modal = document.querySelector(".modal");
 
 // Lock specific element
 lockScroll({ target: modal });
 
 // Lock document element
-lockScroll({ target: 'documentElement' });
+lockScroll({ target: "documentElement" });
 
-// Lock window/scrolling element  
-lockScroll({ target: 'window' });
+// Lock window/scrolling element
+lockScroll({ target: "window" });
 
 // Unlock with same target
 unlockScroll({ target: modal });
@@ -126,9 +130,11 @@ clearAllScrollLocks(); // all targets unlocked
 Lock scroll on target element.
 
 **Options:**
+
 - `target?: ScrollLockTarget` - Element to lock (default: `"body"`)
 
 **ScrollLockTarget:**
+
 - `"body"` (default) - Document body
 - `"documentElement"` or `"html"` - Document element
 - `"window"` - Scrolling element
@@ -139,6 +145,7 @@ Lock scroll on target element.
 Unlock scroll on target element.
 
 **Options:**
+
 - `target?: ScrollLockTarget` - Element to unlock (default: `"body"`)
 - `force?: boolean` - Ignore reference counting (default: `false`)
 
@@ -147,6 +154,7 @@ Unlock scroll on target element.
 Check if target is currently locked.
 
 **Parameters:**
+
 - `target?: ScrollLockTarget` - Element to check (default: `"body"`)
 
 **Returns:** `boolean`
