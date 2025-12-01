@@ -15,48 +15,48 @@ describe("scroll-lock", () => {
     document.body.style.overflow = "";
   });
 
-  it("locks and unlocks body scroll by default", () => {
-    expect(isScrollLocked()).toBe(false);
+  it("locks and unlocks body scroll", () => {
+    expect(isScrollLocked(document.body)).toBe(false);
     expect(document.body.style.overflow).toBe("");
 
-    lockScroll(); // Default target is body
+    lockScroll(document.body);
 
-    expect(isScrollLocked()).toBe(true);
+    expect(isScrollLocked(document.body)).toBe(true);
     expect(document.body.style.overflow).toBe("hidden");
 
-    unlockScroll(); // Default target is body
+    unlockScroll(document.body);
 
-    expect(isScrollLocked()).toBe(false);
+    expect(isScrollLocked(document.body)).toBe(false);
     expect(document.body.style.overflow).toBe("");
   });
 
   it("respects reference counting for the same target", () => {
-    lockScroll();
-    lockScroll();
+    lockScroll(document.body);
+    lockScroll(document.body);
 
     // After two locks, overflow is still just hidden
-    expect(isScrollLocked()).toBe(true);
+    expect(isScrollLocked(document.body)).toBe(true);
     expect(document.body.style.overflow).toBe("hidden");
 
     // First unlock doesn't restore style
-    unlockScroll();
-    expect(isScrollLocked()).toBe(true);
+    unlockScroll(document.body);
+    expect(isScrollLocked(document.body)).toBe(true);
     expect(document.body.style.overflow).toBe("hidden");
 
     // Second unlock actually unlocks
-    unlockScroll();
-    expect(isScrollLocked()).toBe(false);
+    unlockScroll(document.body);
+    expect(isScrollLocked(document.body)).toBe(false);
     expect(document.body.style.overflow).toBe("");
   });
 
   it("force unlock ignores reference count", () => {
-    lockScroll();
-    lockScroll();
-    expect(isScrollLocked()).toBe(true);
+    lockScroll(document.body);
+    lockScroll(document.body);
+    expect(isScrollLocked(document.body)).toBe(true);
 
-    unlockScroll({ force: true });
+    unlockScroll(document.body, { force: true });
 
-    expect(isScrollLocked()).toBe(false);
+    expect(isScrollLocked(document.body)).toBe(false);
     expect(document.body.style.overflow).toBe("");
   });
 
@@ -64,24 +64,24 @@ describe("scroll-lock", () => {
     const panel = document.createElement("div");
     document.body.append(panel);
 
-    lockScroll(); // body
-    lockScroll({ target: panel });
+    lockScroll(document.body);
+    lockScroll(panel);
 
-    expect(isScrollLocked()).toBe(true); // body
+    expect(isScrollLocked(document.body)).toBe(true);
     expect(isScrollLocked(panel)).toBe(true);
     expect(document.body.style.overflow).toBe("hidden");
     expect(panel.style.overflow).toBe("hidden");
 
     // Unlock panel, doesn't affect body
-    unlockScroll({ target: panel });
-    expect(isScrollLocked()).toBe(true); // body still locked
+    unlockScroll(panel);
+    expect(isScrollLocked(document.body)).toBe(true); // body still locked
     expect(isScrollLocked(panel)).toBe(false);
     expect(document.body.style.overflow).toBe("hidden");
     expect(panel.style.overflow).toBe("");
 
     // Unlock body
-    unlockScroll();
-    expect(isScrollLocked()).toBe(false);
+    unlockScroll(document.body);
+    expect(isScrollLocked(document.body)).toBe(false);
     expect(document.body.style.overflow).toBe("");
   });
 
@@ -89,16 +89,16 @@ describe("scroll-lock", () => {
     const panel = document.createElement("div");
     document.body.append(panel);
 
-    lockScroll(); // body
-    lockScroll({ target: panel });
-    lockScroll({ target: panel }); // panel locked twice
+    lockScroll(document.body);
+    lockScroll(panel);
+    lockScroll(panel); // panel locked twice
 
-    expect(isScrollLocked()).toBe(true);
+    expect(isScrollLocked(document.body)).toBe(true);
     expect(isScrollLocked(panel)).toBe(true);
 
     clearAllScrollLocks();
 
-    expect(isScrollLocked()).toBe(false);
+    expect(isScrollLocked(document.body)).toBe(false);
     expect(isScrollLocked(panel)).toBe(false);
     expect(document.body.style.overflow).toBe("");
     expect(panel.style.overflow).toBe("");

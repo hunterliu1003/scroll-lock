@@ -26,8 +26,8 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint . --ignore-pattern docs/.vitepress/cache && prettier -c . --ignore-pattern 'docs/.vitepress/cache/**'",
-    "lint:fix": "automd && eslint . --fix --ignore-pattern docs/.vitepress/cache && prettier -w . --ignore-pattern 'docs/.vitepress/cache/**'",
+    "lint": "eslint . && prettier -c .",
+    "lint:fix": "automd && eslint . --fix && prettier -w .",
     "prepack": "npm run build",
     "release": "npm run test && changelogen --release && npm publish && git push --follow-tags",
     "test": "npm run lint && npm run test:types && vitest run --coverage",
@@ -39,6 +39,7 @@
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.17",
     "@types/node": "^24.3.0",
     "@vitest/coverage-v8": "^3.2.4",
     "automd": "^0.4.0",
@@ -47,10 +48,12 @@
     "eslint-config-unjs": "^0.5.0",
     "jsdom": "^27.2.0",
     "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.17",
     "tsdown": "0.17.0-beta.4",
     "typescript": "^5.9.2",
     "vitepress": "^1.6.4",
     "vitepress-plugin-tabs": "^0.7.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "vue": "^3.5.25"
   }
 }

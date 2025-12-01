@@ -1,85 +1,101 @@
-# Markdown Extension Examples
+<script setup>
+import ScrollLockTargetQueue from './components/ScrollLockTargetQueue.vue';
+import ScrollLockBody from './components/ScrollLockBody.vue';
+import ScrollLockClearAll from './components/ScrollLockClearAll.vue';
+</script>
 
-This page demonstrates some of the built-in markdown extensions provided by VitePress.
+# Guide
 
-## Syntax Highlighting
+Complete guide to using `@hunterliu/scroll-lock` for preventing unwanted scrolling in web applications.
 
-VitePress provides Syntax Highlighting powered by [Shiki](https://github.com/shikijs/shiki), with additional features like line-highlighting:
+## Installation
 
-**Input**
-
-````md
-```js{4}
-export default {
-  data () {
-    return {
-      msg: 'Highlighted!'
-    }
-  }
-}
-```
-````
-
-**Output**
-
-```js{4}
-export default {
-  data () {
-    return {
-      msg: 'Highlighted!'
-    }
-  }
-}
+```sh
+npm install @hunterliu/scroll-lock
 ```
 
-## Custom Containers
+## Quick Start
 
-**Input**
+The simplest way to lock and unlock scrolling:
 
-```md
-::: info
-This is an info box.
-:::
+```ts
+import {
+  lockScroll,
+  unlockScroll,
+  isScrollLocked,
+} from "@hunterliu/scroll-lock";
 
-::: tip
-This is a tip.
-:::
+lockScroll(document.body);
 
-::: warning
-This is a warning.
-:::
+console.log(isScrollLocked(document.body)); // true
 
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
+unlockScroll(document.body);
 ```
 
-**Output**
+## Basic Examples
 
-::: info
-This is an info box.
+### Locking Body Scroll
+
+:::tabs
+== Example
+<ScrollLockBody />
+== Code
+
+```ts
+import {
+  lockScroll,
+  unlockScroll,
+  isScrollLocked,
+} from "@hunterliu/scroll-lock";
+
+lockScroll(document.body);
+
+const isLocked = isScrollLocked(document.body);
+
+unlockScroll(document.body);
+```
+
 :::
 
-::: tip
-This is a tip.
+### Locking Custom Element Scroll
+
+:::tabs
+== Example
+<ScrollLockTargetQueue />
+== Code
+
+```ts
+import {
+  lockScroll,
+  unlockScroll,
+  isScrollLocked,
+} from "@hunterliu/scroll-lock";
+
+const element = document.querySelector(".scrollable-element");
+
+lockScroll(element);
+
+unlockScroll(element);
+
+unlockScroll(element, { force: true });
+```
+
 :::
 
-::: warning
-This is a warning.
+### Clear All Locks
+
+:::tabs
+== Example
+<ScrollLockClearAll />
+== Code
+
+```ts
+import { clearAllScrollLocks } from "@hunterliu/scroll-lock";
+
+// Immediately unlock all targets
+clearAllScrollLocks();
+```
+
 :::
 
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-
-## More
-
-Check out the documentation for the [full list of markdown extensions](https://vitepress.dev/guide/markdown).
+For complete API documentation, see the [API Reference](/api).

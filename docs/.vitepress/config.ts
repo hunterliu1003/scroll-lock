@@ -1,3 +1,4 @@
+import Tailwind from "@tailwindcss/vite";
 import { defineConfig } from "vitepress";
 import { tabsMarkdownPlugin } from "vitepress-plugin-tabs";
 
@@ -22,5 +23,8 @@ export default defineConfig({
     config(md) {
       md.use(tabsMarkdownPlugin);
     },
+  },
+  vite: {
+    plugins: [Tailwind()],
   },
 });

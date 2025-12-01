@@ -2,54 +2,209 @@
 outline: deep
 ---
 
-# Runtime API Examples
+# API Reference
 
-This page demonstrates usage of some of the runtime APIs provided by VitePress.
+Complete reference for all functions and types in the `@hunterliu/scroll-lock` library.
 
-The main `useData()` API can be used to access site, theme, and page data for the current page. It works in both `.md` and `.vue` files:
+## Functions
 
-```md
-<script setup>
-import { useData } from 'vitepress'
+### `lockScroll(target)`
 
-const { theme, page, frontmatter } = useData()
-</script>
+Locks scroll on the specified target element. Multiple calls on the same element use reference counting.
 
-## Results
-
-### Theme Data
-
-<pre>{{ theme }}</pre>
-
-### Page Data
-
-<pre>{{ page }}</pre>
-
-### Page Frontmatter
-
-<pre>{{ frontmatter }}</pre>
+```typescript
+function lockScroll(target: ScrollLockTarget): LockState | undefined;
 ```
 
-<script setup>
-import { useData } from 'vitepress'
+**Parameters:**
 
-const { site, theme, page, frontmatter } = useData()
-</script>
+- `target: ScrollLockTarget` - Element to lock (default: `document.body` if null/undefined)
 
-## Results
+**Returns:**
 
-### Theme Data
+- `LockState | undefined` - The lock state object, or `undefined` if not in browser environment
 
-<pre>{{ theme }}</pre>
+**Example:**
 
-### Page Data
+```js
+import { lockScroll } from "@hunterliu/scroll-lock";
 
-<pre>{{ page }}</pre>
+// Lock body scroll (pass null/undefined for default)
+lockScroll(document.body);
 
-### Page Frontmatter
+// Lock specific element
+const modal = document.querySelector(".modal");
+lockScroll(modal);
 
-<pre>{{ frontmatter }}</pre>
+// Lock using window (targets documentElement)
+lockScroll(window);
+```
 
-## More
+### `unlockScroll(target, options?)`
 
-Check out the documentation for the [full list of runtime APIs](https://vitepress.dev/reference/runtime-api#usedata).
+Unlocks scroll on the specified target element. Uses reference counting unless forced.
+
+```typescript
+function unlockScroll(
+  target: ScrollLockTarget,
+  options?: {
+    force?: boolean;
+  },
+): LockState | undefined;
+```
+
+**Parameters:**
+
+- `target: ScrollLockTarget` - Element to unlock (default: `document.body` if null/undefined)
+- `options?` - Optional configuration object
+  - `force?: boolean` - Bypass reference counting (default: `false`)
+
+**Returns:**
+
+- `LockState | undefined` - The lock state object, or `undefined` if not in browser environment
+
+**Example:**
+
+```js
+import { unlockScroll } from "@hunterliu/scroll-lock";
+
+// Normal unlock (respects reference counting)
+unlockScroll(document.body);
+
+// Force unlock (ignores reference count)
+unlockScroll(document.body, { force: true });
+
+// Unlock specific element
+unlockScroll(modal);
+```
+
+### `isScrollLocked(target)`
+
+Checks if the specified target element is currently locked by this library.
+
+```typescript
+function isScrollLocked(target: ScrollLockTarget): boolean;
+```
+
+**Parameters:**
+
+- `target: ScrollLockTarget` - Element to check (default: `document.body` if null/undefined)
+
+**Returns:**
+
+- `boolean` - `true` if the element is locked, `false` otherwise
+
+**Example:**
+
+```js
+import { isScrollLocked, lockScroll } from "@hunterliu/scroll-lock";
+
+console.log(isScrollLocked(document.body)); // false
+
+lockScroll(document.body);
+console.log(isScrollLocked(document.body)); // true
+
+// Check specific element
+const modal = document.querySelector(".modal");
+console.log(isScrollLocked(modal)); // false
+```
+
+### `clearAllScrollLocks()`
+
+Immediately clears all scroll locks on all targets, restoring their original styles.
+
+```typescript
+function clearAllScrollLocks(): void;
+```
+
+**Example:**
+
+```js
+import { clearAllScrollLocks, lockScroll } from "@hunterliu/scroll-lock";
+
+// Lock multiple elements
+lockScroll(document.body);
+lockScroll(document.querySelector(".modal"));
+lockScroll(document.querySelector(".sidebar"));
+
+// Clear all locks at once
+clearAllScrollLocks();
+```
+
+## Types
+
+### `ScrollLockTarget`
+
+Union type defining valid targets for scroll locking operations.
+
+```typescript
+type ScrollLockTarget =
+  | HTMLElement
+  | SVGElement
+  | Window
+  | Document
+  | null
+  | undefined;
+```
+
+**Target Resolution:**
+
+- `HTMLElement | SVGElement` - Used directly as the lock target
+- `Window` - Targets `window.document.documentElement`
+- `Document` - Targets `document.documentElement`
+- `null | undefined` - Defaults to `document.body`
+
+### `LockState`
+
+Interface representing the state of a locked element.
+
+```typescript
+interface LockState {
+  count: number;
+  originalOverflow?: string;
+  stopTouchEventListener?: () => void;
+}
+```
+
+**Properties:**
+
+- `count: number` - Reference count for the lock
+- `originalOverflow?: string` - Original overflow style value
+- `stopTouchEventListener?: () => void` - Function to cleanup iOS touch event listener
+
+## Exported Constants
+
+### `lockStateMap`
+
+WeakMap storing the lock state for each locked element.
+
+```typescript
+export const lockStateMap: WeakMap<HTMLElement | SVGElement, LockState>;
+```
+
+**Usage:**
+
+```js
+import { lockStateMap, lockScroll } from "@hunterliu/scroll-lock";
+
+lockScroll(document.body);
+const state = lockStateMap.get(document.body);
+console.log(state?.count); // 1
+```
+
+### `lockedElementSet`
+
+Set containing all currently locked elements for iteration purposes.
+
+```typescript
+export const lockedElementSet: Set<HTMLElement | SVGElement>;
+```
+
+**Usage:**
+
+```js
+import { lockedElementSet, lockScroll } from "@hunterliu/scroll-lock";
+
+lockScroll(document.body);
+console.log(lockedElementSet.has(document.body)); // true
+```

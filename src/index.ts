@@ -23,40 +23,43 @@ type ScrollLockTarget =
 
 interface LockState {
   count: number;
-  originalOverflow: string;
+  originalOverflow?: string;
   stopTouchEventListener?: () => void;
 }
 
-const lockStates = new WeakMap<HTMLElement | SVGElement, LockState>();
-const lockedElements = new Set<HTMLElement | SVGElement>();
+export const lockStateMap = new WeakMap<HTMLElement | SVGElement, LockState>();
+export const lockedElementSet = new Set<HTMLElement | SVGElement>();
 
-export function lockScroll(options?: { target?: ScrollLockTarget }): void {
+export function lockScroll(target: ScrollLockTarget): LockState | undefined {
   if (!isBrowser()) return;
 
-  const el = resolveTarget(options?.target);
+  const el = resolveTarget(target);
   if (!el) return;
 
-  applyLock(el);
+  return applyLock(el);
 }
 
-export function unlockScroll(options?: {
-  target?: ScrollLockTarget;
-  force?: boolean;
-}): void {
+export function unlockScroll(
+  target: ScrollLockTarget,
+  options?: {
+    force?: boolean;
+  },
+): LockState | undefined {
   if (!isBrowser()) return;
 
-  const target = options?.target;
   const force = options?.force ?? false;
 
   const el = resolveTarget(target);
   if (!el) return;
 
-  const state = lockStates.get(el);
+  const state = lockStateMap.get(el);
   if (!state) return;
 
   if (force) {
     restoreElement(el, state);
-    return;
+    return {
+      count: 0,
+    };
   }
 
   state.count -= 1;
@@ -64,15 +67,16 @@ export function unlockScroll(options?: {
   if (state.count <= 0) {
     restoreElement(el, state);
   }
+  return state;
 }
 
-export function isScrollLocked(target?: ScrollLockTarget): boolean {
+export function isScrollLocked(target: ScrollLockTarget): boolean {
   if (!isBrowser()) return false;
 
   const el = resolveTarget(target);
   if (!el) return false;
 
-  const state = lockStates.get(el);
+  const state = lockStateMap.get(el);
   return !!state && state.count > 0;
 }
 
@@ -80,18 +84,18 @@ export function clearAllScrollLocks(): void {
   if (!isBrowser()) return;
 
   // Use lockedElements (Set) to safely iterate through all previously locked elements
-  for (const el of lockedElements) {
-    const state = lockStates.get(el);
+  for (const el of lockedElementSet) {
+    const state = lockStateMap.get(el);
     if (state) {
       restoreElement(el, state);
     }
   }
 
-  lockedElements.clear();
+  lockedElementSet.clear();
 }
 
-function applyLock(el: HTMLElement | SVGElement): void {
-  let state = lockStates.get(el);
+function applyLock(el: HTMLElement | SVGElement): LockState {
+  let state = lockStateMap.get(el);
 
   if (!state) {
     state = {
@@ -104,8 +108,8 @@ function applyLock(el: HTMLElement | SVGElement): void {
       state.stopTouchEventListener = () =>
         el.removeEventListener("touchmove", touchEventListener);
     }
-    lockStates.set(el, state);
-    lockedElements.add(el);
+    lockStateMap.set(el, state);
+    lockedElementSet.add(el);
   }
 
   if (state.count === 0) {
@@ -113,6 +117,8 @@ function applyLock(el: HTMLElement | SVGElement): void {
   }
 
   state.count += 1;
+
+  return state;
 }
 
 function restoreElement(el: HTMLElement | SVGElement, state: LockState): void {
@@ -125,12 +131,12 @@ function restoreElement(el: HTMLElement | SVGElement, state: LockState): void {
     el.style.removeProperty("overflow");
   }
 
-  lockStates.delete(el);
-  lockedElements.delete(el);
+  lockStateMap.delete(el);
+  lockedElementSet.delete(el);
 }
 
 function resolveTarget(
-  target?: HTMLElement | SVGElement | Window | Document | null | undefined,
+  target: HTMLElement | SVGElement | Window | Document | null | undefined,
 ): HTMLElement | SVGElement | undefined {
   if (!target) return document.body;
 
