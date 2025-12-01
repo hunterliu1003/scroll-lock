@@ -13,8 +13,6 @@ describe("scroll-lock", () => {
 
     // Ensure body style is clean
     document.body.style.overflow = "";
-    document.body.style.overflowX = "";
-    document.body.style.overflowY = "";
   });
 
   it("locks and unlocks body scroll by default", () => {
