@@ -27,75 +27,113 @@ interface LockState {
   stopTouchEventListener?: () => void;
 }
 
-export const lockStateMap = new WeakMap<HTMLElement | SVGElement, LockState>();
-export const lockedElementSet = new Set<HTMLElement | SVGElement>();
+export function createScrollLock() {
+  const lockStateMap = new WeakMap<HTMLElement | SVGElement, LockState>();
+  const lockedElementSet = new Set<HTMLElement | SVGElement>();
 
-export function lockScroll(target: ScrollLockTarget): LockState | undefined {
-  if (!isBrowser()) return;
+  function lockScroll(target: ScrollLockTarget): LockState | undefined {
+    if (!isBrowser()) return;
 
-  const el = resolveTarget(target);
-  if (!el) return;
+    const el = resolveTarget(target);
+    if (!el) return;
 
-  return applyLock(el);
-}
-
-export function unlockScroll(
-  target: ScrollLockTarget,
-  options?: {
-    force?: boolean;
-  },
-): LockState | undefined {
-  if (!isBrowser()) return;
-
-  const force = options?.force ?? false;
-
-  const el = resolveTarget(target);
-  if (!el) return;
-
-  const state = lockStateMap.get(el);
-  if (!state) return;
-
-  if (force) {
-    restoreElement(el, state);
-    return {
-      count: 0,
-    };
+    return applyLock(el, {
+      lockStateMap,
+      lockedElementSet,
+    });
   }
 
-  state.count -= 1;
+  function unlockScroll(
+    target: ScrollLockTarget,
+    options?: {
+      force?: boolean;
+    },
+  ): LockState | undefined {
+    if (!isBrowser()) return;
 
-  if (state.count <= 0) {
-    restoreElement(el, state);
-  }
-  return state;
-}
+    const force = options?.force ?? false;
 
-export function isScrollLocked(target: ScrollLockTarget): boolean {
-  if (!isBrowser()) return false;
+    const el = resolveTarget(target);
+    if (!el) return;
 
-  const el = resolveTarget(target);
-  if (!el) return false;
-
-  const state = lockStateMap.get(el);
-  return !!state && state.count > 0;
-}
-
-export function clearAllScrollLocks(): void {
-  if (!isBrowser()) return;
-
-  // Use lockedElements (Set) to safely iterate through all previously locked elements
-  for (const el of lockedElementSet) {
     const state = lockStateMap.get(el);
-    if (state) {
-      restoreElement(el, state);
+    if (!state) return;
+
+    if (force) {
+      restoreElement(el, state, {
+        lockedElementSet,
+        lockStateMap,
+      });
+      return {
+        count: 0,
+      };
     }
+
+    state.count -= 1;
+
+    if (state.count <= 0) {
+      restoreElement(el, state, {
+        lockedElementSet,
+        lockStateMap,
+      });
+    }
+    return state;
   }
 
-  lockedElementSet.clear();
+  function isScrollLocked(target: ScrollLockTarget): boolean {
+    if (!isBrowser()) return false;
+
+    const el = resolveTarget(target);
+    if (!el) return false;
+
+    const state = lockStateMap.get(el);
+    return !!state && state.count > 0;
+  }
+
+  function clearAllScrollLocks(): void {
+    if (!isBrowser()) return;
+
+    // Use lockedElements (Set) to safely iterate through all previously locked elements
+    for (const el of lockedElementSet) {
+      const state = lockStateMap.get(el);
+      if (state) {
+        restoreElement(el, state, {
+          lockedElementSet,
+          lockStateMap,
+        });
+      }
+    }
+
+    lockedElementSet.clear();
+  }
+
+  return {
+    lockStateMap,
+    lockedElementSet,
+    lockScroll,
+    unlockScroll,
+    isScrollLocked,
+    clearAllScrollLocks,
+  };
 }
 
-function applyLock(el: HTMLElement | SVGElement): LockState {
-  let state = lockStateMap.get(el);
+export const {
+  lockStateMap,
+  lockedElementSet,
+  lockScroll,
+  unlockScroll,
+  isScrollLocked,
+  clearAllScrollLocks,
+} = createScrollLock();
+
+function applyLock(
+  el: HTMLElement | SVGElement,
+  ctx: {
+    lockStateMap: WeakMap<HTMLElement | SVGElement, LockState>;
+    lockedElementSet: Set<HTMLElement | SVGElement>;
+  },
+): LockState {
+  let state = ctx.lockStateMap.get(el);
 
   if (!state) {
     state = {
@@ -108,8 +146,8 @@ function applyLock(el: HTMLElement | SVGElement): LockState {
       state.stopTouchEventListener = () =>
         el.removeEventListener("touchmove", touchEventListener);
     }
-    lockStateMap.set(el, state);
-    lockedElementSet.add(el);
+    ctx.lockStateMap.set(el, state);
+    ctx.lockedElementSet.add(el);
   }
 
   if (state.count === 0) {
@@ -121,7 +159,14 @@ function applyLock(el: HTMLElement | SVGElement): LockState {
   return state;
 }
 
-function restoreElement(el: HTMLElement | SVGElement, state: LockState): void {
+function restoreElement(
+  el: HTMLElement | SVGElement,
+  state: LockState,
+  ctx: {
+    lockStateMap: WeakMap<HTMLElement | SVGElement, LockState>;
+    lockedElementSet: Set<HTMLElement | SVGElement>;
+  },
+): void {
   if (isIOS) {
     state.stopTouchEventListener?.();
   }
@@ -131,8 +176,8 @@ function restoreElement(el: HTMLElement | SVGElement, state: LockState): void {
     el.style.removeProperty("overflow");
   }
 
-  lockStateMap.delete(el);
-  lockedElementSet.delete(el);
+  ctx.lockStateMap.delete(el);
+  ctx.lockedElementSet.delete(el);
 }
 
 function resolveTarget(
