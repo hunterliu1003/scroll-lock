@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { lockScroll, unlockScroll, isScrollLocked } from "../../src";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 
 const isLocked = ref(false);
 
@@ -13,9 +13,11 @@ const onClick = () => {
   isLocked.value = isScrollLocked(document.body);
 };
 
-setInterval(() => {
-  isLocked.value = isScrollLocked(document.body);
-}, 100);
+onMounted(() => {
+  setInterval(() => {
+    isLocked.value = isScrollLocked(document.body);
+  }, 100);
+});
 </script>
 
 <template>
