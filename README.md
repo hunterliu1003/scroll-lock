@@ -105,7 +105,7 @@ The gap is measured by the first lock and restored by the last unlock, so nested
 
 ## iOS
 
-iOS ignores `overflow: hidden` on the page, so on iOS a lock cancels `touchmove` on the locked element instead. Touches inside an element that can still scroll in the direction of the finger are left alone, so lists inside a modal keep scrolling without rubber-banding the page behind it. Multi-touch gestures such as pinch to zoom are never cancelled.
+iOS ignores `overflow: hidden` on the page, so on iOS a lock cancels `touchmove` on the locked element instead. Touches inside an element that can still scroll in the direction of the finger, vertically or horizontally, are left alone, so lists and carousels inside a modal keep scrolling without rubber-banding the page behind it. Multi-touch gestures such as pinch to zoom are never cancelled.
 
 ## Clear All Locks
 

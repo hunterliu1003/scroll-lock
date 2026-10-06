@@ -96,7 +96,7 @@ unlockScroll(document.body);
 
 ### iOS
 
-iOS ignores `overflow: hidden` on the page, so on iOS a lock cancels `touchmove` on the locked element instead. An element below it that can still scroll in the direction of the finger keeps scrolling, so a list inside a modal works as usual while the page behind it stays put. Multi-touch gestures are never cancelled.
+iOS ignores `overflow: hidden` on the page, so on iOS a lock cancels `touchmove` on the locked element instead. An element below it that can still scroll in the direction of the finger, vertically or horizontally, keeps scrolling, so a list or carousel inside a modal works as usual while the page behind it stays put. Multi-touch gestures are never cancelled.
 
 ### Clear All Locks
 

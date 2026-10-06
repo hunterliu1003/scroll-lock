@@ -8,26 +8,43 @@ import {
 
 function scrollable(
   parent: Element,
-  { scrollTop = 0, scrollHeight = 200, clientHeight = 100 } = {},
+  {
+    scrollTop = 0,
+    scrollHeight = 200,
+    clientHeight = 100,
+    scrollLeft = 0,
+    scrollWidth = 100,
+    clientWidth = 100,
+    overflowX = "visible",
+  } = {},
 ) {
   const el = document.createElement("div");
   el.style.overflowY = "auto";
+  el.style.overflowX = overflowX;
   Object.defineProperties(el, {
     scrollTop: { value: scrollTop, writable: true },
     scrollHeight: { value: scrollHeight },
     clientHeight: { value: clientHeight },
+    scrollLeft: { value: scrollLeft, writable: true },
+    scrollWidth: { value: scrollWidth },
+    clientWidth: { value: clientWidth },
   });
   parent.append(el);
   return el;
 }
 
+/** Each point is a `clientY`, or `[clientX, clientY]`. */
 function touch(
   type: "touchstart" | "touchmove",
   target: Element,
-  ys: number[],
+  points: (number | [number, number])[],
 ) {
   const event = new Event(type, { bubbles: true, cancelable: true });
-  const touches = ys.map((clientY) => ({ clientY }));
+  const touches = points.map((point) =>
+    Array.isArray(point)
+      ? { clientX: point[0], clientY: point[1] }
+      : { clientX: 0, clientY: point },
+  );
   Object.defineProperties(event, {
     touches: { value: touches },
     targetTouches: { value: touches },
@@ -302,6 +319,72 @@ describe("iOS", () => {
 
     touch("touchstart", panel, [100]);
     expect(touch("touchmove", panel, [150]).defaultPrevented).toBe(true);
+  });
+
+  it("lets a horizontal scroller scroll while it still can", () => {
+    const carousel = scrollable(document.body, {
+      overflowX: "auto",
+      scrollLeft: 50,
+      scrollWidth: 400,
+      clientWidth: 200,
+      scrollHeight: 100,
+    });
+    ios.lockScroll(document.body);
+
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[150, 102]]).defaultPrevented).toBe(
+      false,
+    );
+    expect(touch("touchmove", carousel, [[50, 98]]).defaultPrevented).toBe(
+      false,
+    );
+  });
+
+  it("cancels pulling a horizontal scroller past its left or right edge", () => {
+    const carousel = scrollable(document.body, {
+      overflowX: "auto",
+      scrollWidth: 400,
+      clientWidth: 200,
+      scrollHeight: 100,
+    });
+    ios.lockScroll(document.body);
+
+    carousel.scrollLeft = 0;
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[150, 100]]).defaultPrevented).toBe(
+      true,
+    );
+    expect(touch("touchmove", carousel, [[50, 100]]).defaultPrevented).toBe(
+      false,
+    );
+
+    carousel.scrollLeft = 200;
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[50, 100]]).defaultPrevented).toBe(
+      true,
+    );
+    expect(touch("touchmove", carousel, [[150, 100]]).defaultPrevented).toBe(
+      false,
+    );
+  });
+
+  it("judges a gesture by its dominant axis", () => {
+    const carousel = scrollable(document.body, {
+      overflowX: "auto",
+      scrollLeft: 50,
+      scrollWidth: 400,
+      clientWidth: 200,
+      scrollHeight: 100,
+    });
+    ios.lockScroll(document.body);
+
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[110, 160]]).defaultPrevented).toBe(
+      true,
+    );
+    expect(touch("touchmove", carousel, [[160, 110]]).defaultPrevented).toBe(
+      false,
+    );
   });
 
   it("stops cancelling once the last lock is released", () => {

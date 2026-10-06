@@ -250,12 +250,13 @@ function isBrowser(): boolean {
  * except inside an element below the locked one that can still scroll the way the finger moves.
  */
 function listenTouches(el: HTMLElement | SVGElement): () => void {
-  let startY = 0;
+  let start = { x: 0, y: 0 };
 
   const onTouchStart = (event: Event) => {
     const { touches } = event as TouchEvent;
     const [first] = touches;
-    if (touches.length === 1 && first) startY = first.clientY;
+    if (touches.length === 1 && first)
+      start = { x: first.clientX, y: first.clientY };
   };
 
   const onTouchMove = (event: Event) => {
@@ -264,7 +265,7 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
     // More than one touch is usually a gesture such as pinch to zoom.
     if (!first || touches.length > 1) return;
 
-    const delta = first.clientY - startY;
+    const delta = { x: first.clientX - start.x, y: first.clientY - start.y };
     if (canScroll(target as Element | null, delta, el)) return;
 
     event.preventDefault();
@@ -279,25 +280,57 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
   };
 }
 
-/** Whether an element between `target` and the locked `root` can still scroll the way the finger moves (`delta` > 0 is downwards). */
+/**
+ * Whether an element between `target` and the locked `root` can still scroll along the
+ * dominant axis of the gesture, in the direction the finger moves (positive is down or right).
+ */
 function canScroll(
   target: Element | null,
-  delta: number,
+  delta: { x: number; y: number },
   root: Element,
 ): boolean {
+  const horizontal = Math.abs(delta.x) > Math.abs(delta.y);
   for (let el = target; el && el !== root; el = el.parentElement) {
-    if (!isScrollable(el)) continue;
-    if (delta > 0 && el.scrollTop > 0) return true;
-    if (delta < 0 && el.scrollTop + el.clientHeight < el.scrollHeight)
+    if (horizontal ? canScrollX(el, delta.x) : canScrollY(el, delta.y))
       return true;
   }
   return false;
 }
 
-function isScrollable(el: Element): boolean {
-  const { overflowY } = globalThis.window.getComputedStyle(el);
+function canScrollY(el: Element, delta: number): boolean {
+  if (
+    !isScrollable(
+      globalThis.window.getComputedStyle(el).overflowY,
+      el.scrollHeight,
+      el.clientHeight,
+    )
+  )
+    return false;
+  return delta > 0
+    ? el.scrollTop > 0
+    : delta < 0 && el.scrollTop + el.clientHeight < el.scrollHeight;
+}
+
+function canScrollX(el: Element, delta: number): boolean {
+  if (
+    !isScrollable(
+      globalThis.window.getComputedStyle(el).overflowX,
+      el.scrollWidth,
+      el.clientWidth,
+    )
+  )
+    return false;
+  return delta > 0
+    ? el.scrollLeft > 0
+    : delta < 0 && el.scrollLeft + el.clientWidth < el.scrollWidth;
+}
+
+function isScrollable(
+  overflow: string,
+  scrollSize: number,
+  clientSize: number,
+): boolean {
   return (
-    (overflowY === "auto" || overflowY === "scroll") &&
-    el.scrollHeight > el.clientHeight
+    (overflow === "auto" || overflow === "scroll") && scrollSize > clientSize
   );
 }
