@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.0.5
+
+[compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.4...v0.0.5)
+
+### 🚀 Enhancements
+
+- New API createScrollLock ([573f0d8](https://github.com/hunterliu1003/scroll-lock/commit/573f0d8))
+- ReserveScrollBarGap option and edge-aware iOS touch handling ([aed7131](https://github.com/hunterliu1003/scroll-lock/commit/aed7131))
+- Let horizontal scrollers scroll on iOS ([ae07169](https://github.com/hunterliu1003/scroll-lock/commit/ae07169))
+
+### 📖 Documentation
+
+- Ssr support ([7092922](https://github.com/hunterliu1003/scroll-lock/commit/7092922))
+
+### ❤️ Contributors
+
+- Hunter Liu ([@hunterliu1003](https://github.com/hunterliu1003))
+- Hunter ([@hunterliu1003](https://github.com/hunterliu1003))
+
 ## v0.0.4
 
 [compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.3...v0.0.4)
