@@ -8,17 +8,24 @@ Complete reference for all functions and types in the `@hunterliu/scroll-lock` l
 
 ## Functions
 
-### `lockScroll(target)`
+### `lockScroll(target, options?)`
 
 Locks scroll on the specified target element. Multiple calls on the same element use reference counting.
 
 ```typescript
-function lockScroll(target: ScrollLockTarget): LockState | undefined;
+function lockScroll(
+  target: ScrollLockTarget,
+  options?: {
+    reserveScrollBarGap?: boolean;
+  },
+): LockState | undefined;
 ```
 
 **Parameters:**
 
 - `target: ScrollLockTarget` - Element to lock (default: `document.body` if null/undefined)
+- `options?` - Optional configuration object
+  - `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right`, measured by the first lock and restored by the last unlock (default: `false`)
 
 **Returns:**
 
@@ -38,6 +45,9 @@ lockScroll(modal);
 
 // Lock using window (targets documentElement)
 lockScroll(window);
+
+// Keep the layout still when the scrollbar disappears
+lockScroll(document.body, { reserveScrollBarGap: true });
 ```
 
 ### `unlockScroll(target, options?)`
@@ -162,6 +172,7 @@ Interface representing the state of a locked element.
 interface LockState {
   count: number;
   originalOverflow?: string;
+  originalPaddingRight?: string;
   stopTouchEventListener?: () => void;
 }
 ```
@@ -170,7 +181,8 @@ interface LockState {
 
 - `count: number` - Reference count for the lock
 - `originalOverflow?: string` - Original overflow style value
-- `stopTouchEventListener?: () => void` - Function to cleanup iOS touch event listener
+- `originalPaddingRight?: string` - Original padding-right value, present when `reserveScrollBarGap` added to it
+- `stopTouchEventListener?: () => void` - Function to cleanup the iOS touch event listeners
 
 ## Exported Constants
 

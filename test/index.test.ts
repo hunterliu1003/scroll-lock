@@ -1,10 +1,40 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   lockScroll,
   unlockScroll,
   isScrollLocked,
   clearAllScrollLocks,
 } from "../src";
+
+function scrollable(
+  parent: Element,
+  { scrollTop = 0, scrollHeight = 200, clientHeight = 100 } = {},
+) {
+  const el = document.createElement("div");
+  el.style.overflowY = "auto";
+  Object.defineProperties(el, {
+    scrollTop: { value: scrollTop, writable: true },
+    scrollHeight: { value: scrollHeight },
+    clientHeight: { value: clientHeight },
+  });
+  parent.append(el);
+  return el;
+}
+
+function touch(
+  type: "touchstart" | "touchmove",
+  target: Element,
+  ys: number[],
+) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  const touches = ys.map((clientY) => ({ clientY }));
+  Object.defineProperties(event, {
+    touches: { value: touches },
+    targetTouches: { value: touches },
+  });
+  target.dispatchEvent(event);
+  return event;
+}
 
 describe("scroll-lock", () => {
   beforeEach(() => {
@@ -102,5 +132,188 @@ describe("scroll-lock", () => {
     expect(isScrollLocked(panel)).toBe(false);
     expect(document.body.style.overflow).toBe("");
     expect(panel.style.overflow).toBe("");
+  });
+
+  it("restores the overflow the target had before", () => {
+    document.body.style.overflow = "auto";
+
+    lockScroll(document.body);
+    expect(document.body.style.overflow).toBe("hidden");
+
+    unlockScroll(document.body);
+    expect(document.body.style.overflow).toBe("auto");
+  });
+
+  it("installs no touch listeners off iOS", () => {
+    lockScroll(document.body);
+
+    expect(touch("touchmove", document.body, [10]).defaultPrevented).toBe(
+      false,
+    );
+  });
+});
+
+describe("reserveScrollBarGap", () => {
+  const gap = () =>
+    globalThis.innerWidth - document.documentElement.clientWidth;
+
+  beforeEach(() => {
+    clearAllScrollLocks();
+    document.body.removeAttribute("style");
+  });
+
+  it("widens the body padding by the scrollbar gap and restores it", () => {
+    document.body.style.paddingRight = "10px";
+    expect(gap()).toBeGreaterThan(0);
+
+    lockScroll(document.body, { reserveScrollBarGap: true });
+    expect(document.body.style.paddingRight).toBe(`${10 + gap()}px`);
+
+    unlockScroll(document.body);
+    expect(document.body.style.paddingRight).toBe("10px");
+  });
+
+  it("removes the padding it added when the body had none", () => {
+    lockScroll(document.body, { reserveScrollBarGap: true });
+    expect(document.body.style.paddingRight).toBe(`${gap()}px`);
+
+    unlockScroll(document.body);
+    expect(document.body.style.paddingRight).toBe("");
+  });
+
+  it("leaves the padding alone by default", () => {
+    document.body.style.paddingRight = "10px";
+
+    lockScroll(document.body);
+
+    expect(document.body.style.paddingRight).toBe("10px");
+  });
+
+  it("measures the gap once for nested locks and restores it with the last unlock", () => {
+    lockScroll(document.body, { reserveScrollBarGap: true });
+    lockScroll(document.body, { reserveScrollBarGap: true });
+    expect(document.body.style.paddingRight).toBe(`${gap()}px`);
+
+    unlockScroll(document.body);
+    expect(document.body.style.paddingRight).toBe(`${gap()}px`);
+
+    unlockScroll(document.body);
+    expect(document.body.style.paddingRight).toBe("");
+  });
+
+  it("uses the element's own scrollbar width for other targets", () => {
+    const panel = document.createElement("div");
+    Object.defineProperties(panel, {
+      offsetWidth: { value: 220 },
+      clientWidth: { value: 200 },
+    });
+    document.body.append(panel);
+
+    lockScroll(panel, { reserveScrollBarGap: true });
+    expect(panel.style.paddingRight).toBe("20px");
+
+    unlockScroll(panel);
+    expect(panel.style.paddingRight).toBe("");
+  });
+
+  it("adds nothing when the target shows no scrollbar", () => {
+    const panel = document.createElement("div");
+    document.body.append(panel);
+
+    lockScroll(panel, { reserveScrollBarGap: true });
+
+    expect(panel.style.paddingRight).toBe("");
+  });
+});
+
+describe("iOS", () => {
+  type ScrollLock = typeof import("../src");
+  let ios: ScrollLock;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    Object.defineProperty(globalThis.navigator, "userAgent", {
+      value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+      configurable: true,
+    });
+    ios = await import("../src");
+  });
+
+  afterEach(() => {
+    ios.clearAllScrollLocks();
+    document.body.innerHTML = "";
+    document.body.removeAttribute("style");
+  });
+
+  it("cancels touchmove on the locked element", () => {
+    ios.lockScroll(document.body);
+
+    expect(touch("touchmove", document.body, [10]).defaultPrevented).toBe(true);
+  });
+
+  it("lets a multi-touch gesture through", () => {
+    ios.lockScroll(document.body);
+
+    expect(touch("touchmove", document.body, [10, 20]).defaultPrevented).toBe(
+      false,
+    );
+  });
+
+  it("lets a scrollable child scroll while it still can", () => {
+    const list = scrollable(document.body, { scrollTop: 50 });
+    const item = document.createElement("p");
+    list.append(item);
+    ios.lockScroll(document.body);
+
+    touch("touchstart", item, [100]);
+    expect(touch("touchmove", item, [150]).defaultPrevented).toBe(false);
+    expect(touch("touchmove", item, [50]).defaultPrevented).toBe(false);
+  });
+
+  it("cancels pulling a scrollable child past its top or bottom", () => {
+    const list = scrollable(document.body);
+    ios.lockScroll(document.body);
+
+    list.scrollTop = 0;
+    touch("touchstart", list, [100]);
+    expect(touch("touchmove", list, [150]).defaultPrevented).toBe(true);
+    expect(touch("touchmove", list, [50]).defaultPrevented).toBe(false);
+
+    list.scrollTop = 100;
+    touch("touchstart", list, [100]);
+    expect(touch("touchmove", list, [50]).defaultPrevented).toBe(true);
+    expect(touch("touchmove", list, [150]).defaultPrevented).toBe(false);
+  });
+
+  it("cancels touchmove inside a child that cannot scroll at all", () => {
+    const box = scrollable(document.body, {
+      scrollHeight: 100,
+      clientHeight: 100,
+    });
+    ios.lockScroll(document.body);
+
+    touch("touchstart", box, [100]);
+    expect(touch("touchmove", box, [150]).defaultPrevented).toBe(true);
+  });
+
+  it("does not let the locked element itself count as scrollable", () => {
+    const panel = scrollable(document.body, { scrollTop: 50 });
+    ios.lockScroll(panel);
+
+    touch("touchstart", panel, [100]);
+    expect(touch("touchmove", panel, [150]).defaultPrevented).toBe(true);
+  });
+
+  it("stops cancelling once the last lock is released", () => {
+    ios.lockScroll(document.body);
+    ios.lockScroll(document.body);
+
+    ios.unlockScroll(document.body);
+    expect(touch("touchmove", document.body, [10]).defaultPrevented).toBe(true);
+
+    ios.unlockScroll(document.body);
+    expect(touch("touchmove", document.body, [10]).defaultPrevented).toBe(
+      false,
+    );
   });
 });

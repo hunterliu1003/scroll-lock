@@ -13,7 +13,7 @@ function getIsIOS(): boolean {
   );
 }
 
-type ScrollLockTarget =
+export type ScrollLockTarget =
   | HTMLElement
   | SVGElement
   | Window
@@ -21,9 +21,18 @@ type ScrollLockTarget =
   | null
   | undefined;
 
-interface LockState {
+export interface LockScrollOptions {
+  /**
+   * Add the width of the scrollbar that disappears to the target's `padding-right`,
+   * so its content does not shift. Measured when the first lock is applied and restored with the last unlock.
+   */
+  reserveScrollBarGap?: boolean;
+}
+
+export interface LockState {
   count: number;
   originalOverflow?: string;
+  originalPaddingRight?: string;
   stopTouchEventListener?: () => void;
 }
 
@@ -31,13 +40,16 @@ export function createScrollLock() {
   const lockStateMap = new WeakMap<HTMLElement | SVGElement, LockState>();
   const lockedElementSet = new Set<HTMLElement | SVGElement>();
 
-  function lockScroll(target: ScrollLockTarget): LockState | undefined {
+  function lockScroll(
+    target: ScrollLockTarget,
+    options?: LockScrollOptions,
+  ): LockState | undefined {
     if (!isBrowser()) return;
 
     const el = resolveTarget(target);
     if (!el) return;
 
-    return applyLock(el, {
+    return applyLock(el, options, {
       lockStateMap,
       lockedElementSet,
     });
@@ -128,6 +140,7 @@ export const {
 
 function applyLock(
   el: HTMLElement | SVGElement,
+  options: LockScrollOptions | undefined,
   ctx: {
     lockStateMap: WeakMap<HTMLElement | SVGElement, LockState>;
     lockedElementSet: Set<HTMLElement | SVGElement>;
@@ -142,15 +155,15 @@ function applyLock(
     };
 
     if (isIOS) {
-      el.addEventListener("touchmove", touchEventListener, { passive: false });
-      state.stopTouchEventListener = () =>
-        el.removeEventListener("touchmove", touchEventListener);
+      state.stopTouchEventListener = listenTouches(el);
     }
     ctx.lockStateMap.set(el, state);
     ctx.lockedElementSet.add(el);
   }
 
   if (state.count === 0) {
+    // The gap must be measured while the scrollbar is still there.
+    if (options?.reserveScrollBarGap) reserveScrollBarGap(el, state);
     el.style.overflow = "hidden";
   }
 
@@ -175,9 +188,42 @@ function restoreElement(
   } else {
     el.style.removeProperty("overflow");
   }
+  if (state.originalPaddingRight !== undefined) {
+    if (state.originalPaddingRight) {
+      el.style.paddingRight = state.originalPaddingRight;
+    } else {
+      el.style.removeProperty("padding-right");
+    }
+  }
 
   ctx.lockStateMap.delete(el);
   ctx.lockedElementSet.delete(el);
+}
+
+function reserveScrollBarGap(
+  el: HTMLElement | SVGElement,
+  state: LockState,
+): void {
+  const gap = scrollBarGap(el);
+  if (gap <= 0) return;
+
+  const paddingRight =
+    Number.parseFloat(globalThis.window.getComputedStyle(el).paddingRight) || 0;
+  state.originalPaddingRight = el.style.paddingRight;
+  el.style.paddingRight = `${paddingRight + gap}px`;
+}
+
+function scrollBarGap(el: HTMLElement | SVGElement): number {
+  if (el === document.body || el === document.documentElement) {
+    return globalThis.window.innerWidth - document.documentElement.clientWidth;
+  }
+  if (!(el instanceof HTMLElement)) return 0;
+
+  const style = globalThis.window.getComputedStyle(el);
+  const borders =
+    (Number.parseFloat(style.borderLeftWidth) || 0) +
+    (Number.parseFloat(style.borderRightWidth) || 0);
+  return el.offsetWidth - el.clientWidth - borders;
 }
 
 function resolveTarget(
@@ -199,40 +245,59 @@ function isBrowser(): boolean {
   return globalThis.window !== undefined && typeof document !== "undefined";
 }
 
-function touchEventListener(e: Event) {
-  preventDefault(e as TouchEvent);
+/**
+ * iOS ignores `overflow: hidden` on the page, so touch scrolling is cancelled instead,
+ * except inside an element below the locked one that can still scroll the way the finger moves.
+ */
+function listenTouches(el: HTMLElement | SVGElement): () => void {
+  let startY = 0;
+
+  const onTouchStart = (event: Event) => {
+    const { touches } = event as TouchEvent;
+    const [first] = touches;
+    if (touches.length === 1 && first) startY = first.clientY;
+  };
+
+  const onTouchMove = (event: Event) => {
+    const { touches, target } = event as TouchEvent;
+    const [first] = touches;
+    // More than one touch is usually a gesture such as pinch to zoom.
+    if (!first || touches.length > 1) return;
+
+    const delta = first.clientY - startY;
+    if (canScroll(target as Element | null, delta, el)) return;
+
+    event.preventDefault();
+  };
+
+  el.addEventListener("touchstart", onTouchStart, { passive: true });
+  el.addEventListener("touchmove", onTouchMove, { passive: false });
+
+  return () => {
+    el.removeEventListener("touchstart", onTouchStart);
+    el.removeEventListener("touchmove", onTouchMove);
+  };
 }
 
-function preventDefault(rawEvent: TouchEvent): boolean {
-  const e = rawEvent || window.event;
-
-  const _target = e.target as Element;
-
-  // Do not prevent if element or parentNodes have overflow: scroll set.
-  if (checkOverflowScroll(_target)) return false;
-
-  // Do not prevent if the event has more than one touch (usually meaning this is a multi touch gesture like pinch to zoom).
-  if (e.touches.length > 1) return true;
-
-  if (e.preventDefault) e.preventDefault();
-
+/** Whether an element between `target` and the locked `root` can still scroll the way the finger moves (`delta` > 0 is downwards). */
+function canScroll(
+  target: Element | null,
+  delta: number,
+  root: Element,
+): boolean {
+  for (let el = target; el && el !== root; el = el.parentElement) {
+    if (!isScrollable(el)) continue;
+    if (delta > 0 && el.scrollTop > 0) return true;
+    if (delta < 0 && el.scrollTop + el.clientHeight < el.scrollHeight)
+      return true;
+  }
   return false;
 }
 
-function checkOverflowScroll(ele: Element): boolean {
-  const style = globalThis.window.getComputedStyle(ele);
-  if (
-    style.overflowX === "scroll" ||
-    style.overflowY === "scroll" ||
-    (style.overflowX === "auto" && ele.clientWidth < ele.scrollWidth) ||
-    (style.overflowY === "auto" && ele.clientHeight < ele.scrollHeight)
-  ) {
-    return true;
-  } else {
-    const parent = ele.parentNode as Element;
-
-    if (!parent || parent.tagName === "BODY") return false;
-
-    return checkOverflowScroll(parent);
-  }
+function isScrollable(el: Element): boolean {
+  const { overflowY } = globalThis.window.getComputedStyle(el);
+  return (
+    (overflowY === "auto" || overflowY === "scroll") &&
+    el.scrollHeight > el.clientHeight
+  );
 }

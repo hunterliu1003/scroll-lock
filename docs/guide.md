@@ -82,6 +82,22 @@ unlockScroll(element, { force: true });
 
 :::
 
+### Keeping the Layout Still
+
+When the scrollbar disappears, the page content shifts by its width. Pass `reserveScrollBarGap` to add that width to the target's `padding-right` while it is locked:
+
+```ts
+import { lockScroll, unlockScroll } from "@hunterliu/scroll-lock";
+
+lockScroll(document.body, { reserveScrollBarGap: true });
+
+unlockScroll(document.body);
+```
+
+### iOS
+
+iOS ignores `overflow: hidden` on the page, so on iOS a lock cancels `touchmove` on the locked element instead. An element below it that can still scroll in the direction of the finger keeps scrolling, so a list inside a modal works as usual while the page behind it stays put. Multi-touch gestures are never cancelled.
+
 ### Clear All Locks
 
 :::tabs

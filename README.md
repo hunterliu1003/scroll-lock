@@ -14,7 +14,8 @@ A lightweight, SSR-safe scroll locking library with reference counting support. 
 - 🔒 **Reference counting** - Multiple locks on the same element work properly
 - 🌐 **SSR-safe** - Works seamlessly in server-side rendering environments
 - 🎯 **Multiple targets** - Lock body, documentElement, or any HTMLElement
-- 📱 **iOS support** - Special touch event handling for iOS devices
+- 📱 **iOS support** - Cancels touch scrolling on iOS, except inside elements that can still scroll
+- 📏 **Scrollbar gap** - Optionally keeps the layout still when the scrollbar disappears
 - 🔧 **TypeScript** - Full type safety out of the box
 - ⚡ **Lightweight** - Minimal bundle size with zero dependencies
 - 🧹 **Clean restoration** - Properly restores original overflow styles
@@ -88,6 +89,24 @@ lockScroll(document.body); // count: 2
 unlockScroll(document.body, { force: true }); // immediately unlocked
 ```
 
+## Scrollbar Gap
+
+When the scrollbar of a locked element disappears, its content shifts by the scrollbar's width. `reserveScrollBarGap` adds that width to the element's `padding-right` for the duration of the lock:
+
+```ts
+lockScroll(document.body, { reserveScrollBarGap: true });
+// body gets padding-right: <current padding> + <scrollbar width>
+
+unlockScroll(document.body);
+// padding-right is restored
+```
+
+The gap is measured by the first lock and restored by the last unlock, so nested locks never add it twice.
+
+## iOS
+
+iOS ignores `overflow: hidden` on the page, so on iOS a lock cancels `touchmove` on the locked element instead. Touches inside an element that can still scroll in the direction of the finger are left alone, so lists inside a modal keep scrolling without rubber-banding the page behind it. Multi-touch gestures such as pinch to zoom are never cancelled.
+
 ## Clear All Locks
 
 Reset all scroll locks across all targets:
@@ -106,17 +125,24 @@ clearAllScrollLocks(); // all targets unlocked
 
 ## API Reference
 
-### `lockScroll(target)`
+### `lockScroll(target, options?)`
 
 Lock scroll on target element.
 
 ```typescript
-function lockScroll(target: ScrollLockTarget): LockState | undefined;
+function lockScroll(
+  target: ScrollLockTarget,
+  options?: {
+    reserveScrollBarGap?: boolean;
+  },
+): LockState | undefined;
 ```
 
 **Parameters:**
 
 - `target: ScrollLockTarget` - Element to lock (defaults to `document.body` if `null`/`undefined`)
+- `options?` - Optional configuration object
+  - `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right` (default: `false`)
 
 **Returns:**
 
@@ -196,6 +222,7 @@ type ScrollLockTarget =
 interface LockState {
   count: number;
   originalOverflow?: string;
+  originalPaddingRight?: string;
   stopTouchEventListener?: () => void;
 }
 ```
