@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.0.8
+
+[compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.7...v0.0.8)
+
+### 🩹 Fixes
+
+- Count a scroller less than a pixel from an edge as at that edge ([1abffb6](https://github.com/hunterliu1003/scroll-lock/commit/1abffb6))
+- Follow a finger that turns back within one gesture ([b38eb4f](https://github.com/hunterliu1003/scroll-lock/commit/b38eb4f))
+- Measure a right-to-left scroller from its right edge ([3762e1b](https://github.com/hunterliu1003/scroll-lock/commit/3762e1b))
+- Let a scroller inside a shadow root scroll on iOS ([1db4e49](https://github.com/hunterliu1003/scroll-lock/commit/1db4e49))
+- Keep the scrollbar's room where the scrollbar really was ([9837355](https://github.com/hunterliu1003/scroll-lock/commit/9837355))
+- Lock again when the app writes over a locked element's style ([6e1ab19](https://github.com/hunterliu1003/scroll-lock/commit/6e1ab19))
+
+### 💅 Refactors
+
+- Give the touch axis and direction one comment each ([681b499](https://github.com/hunterliu1003/scroll-lock/commit/681b499))
+
+### 📖 Documentation
+
+- Document createScrollLock and LockScrollOptions ([ac90710](https://github.com/hunterliu1003/scroll-lock/commit/ac90710))
+
+### ❤️ Contributors
+
+- Hunter Liu ([@hunterliu1003](https://github.com/hunterliu1003))
+
 ## v0.0.7
 
 [compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.6...v0.0.7)
