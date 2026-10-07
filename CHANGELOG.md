@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.0.7
+
+[compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.6...v0.0.7)
+
+### 🩹 Fixes
+
+- Give back an inline overflow-x or overflow-y on unlock ([ab86b49](https://github.com/hunterliu1003/scroll-lock/commit/ab86b49))
+
+### ❤️ Contributors
+
+- Hunter Liu ([@hunterliu1003](https://github.com/hunterliu1003))
+
 ## v0.0.6
 
 [compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.5...v0.0.6)
