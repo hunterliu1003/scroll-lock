@@ -94,6 +94,10 @@ lockScroll(document.body, { reserveScrollBarGap: true });
 unlockScroll(document.body);
 ```
 
+### Style Written Over a Lock
+
+A framework that re-renders a locked element's style binding writes over the lock. The lock watches the element's `style` attribute, takes the values written as the ones to give back on unlock, and applies itself again before the next paint, scrollbar gap included.
+
 ### iOS
 
 iOS ignores `overflow: hidden` on the page, so on iOS a lock cancels `touchmove` on the locked element instead. An element below it that can still scroll in the direction of the finger, vertically or horizontally, keeps scrolling, so a list or carousel inside a modal works as usual while the page behind it stays put. Multi-touch gestures are never cancelled.

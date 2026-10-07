@@ -269,12 +269,14 @@ interface LockState {
   originalOverflowY?: string;
   reservedScrollBarGap?: ReservedScrollBarGap;
   stopTouchEventListener?: () => void;
+  stopWatchingStyle?: () => void;
 }
 
 interface ReservedScrollBarGap {
   property: "scrollbar-gutter" | "padding-left" | "padding-right";
   original: string;
   value: string;
+  width: number;
 }
 ```
 

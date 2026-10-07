@@ -35,6 +35,7 @@ export interface ReservedScrollBarGap {
   property: "scrollbar-gutter" | "padding-left" | "padding-right";
   original: string;
   value: string;
+  width: number;
 }
 
 export interface LockState {
@@ -43,6 +44,7 @@ export interface LockState {
   originalOverflowY?: string;
   reservedScrollBarGap?: ReservedScrollBarGap;
   stopTouchEventListener?: () => void;
+  stopWatchingStyle?: () => void;
 }
 
 export function createScrollLock() {
@@ -167,6 +169,7 @@ function applyLock(
     if (isIOS) {
       state.stopTouchEventListener = listenTouches(el);
     }
+    state.stopWatchingStyle = watchStyle(el, state);
     ctx.lockStateMap.set(el, state);
     ctx.lockedElementSet.add(el);
   }
@@ -195,6 +198,7 @@ function restoreElement(
   if (isIOS) {
     state.stopTouchEventListener?.();
   }
+  state.stopWatchingStyle?.();
   el.style.overflowX = state.originalOverflowX ?? "";
   el.style.overflowY = state.originalOverflowY ?? "";
   if (state.reservedScrollBarGap) {
@@ -225,16 +229,16 @@ function reserveScrollBarGap(
   if (gutter.startsWith("stable")) return;
 
   if (!page && supportsStableGutter()) {
-    reserve(el, state, "scrollbar-gutter", "stable");
+    reserve(el, state, "scrollbar-gutter", "stable", gap);
     return;
   }
 
-  const style = globalThis.window.getComputedStyle(el);
   /** A right-to-left element shows its scrollbar on the left. */
   const property =
-    !page && style.direction === "rtl" ? "padding-left" : "padding-right";
-  const padding = Number.parseFloat(style.getPropertyValue(property)) || 0;
-  reserve(el, state, property, `${padding + gap}px`);
+    !page && globalThis.window.getComputedStyle(el).direction === "rtl"
+      ? "padding-left"
+      : "padding-right";
+  reserve(el, state, property, widenedPadding(el, property, gap), gap);
 }
 
 function reserve(
@@ -242,13 +246,56 @@ function reserve(
   state: LockState,
   property: ReservedScrollBarGap["property"],
   value: string,
+  width: number,
 ): void {
   state.reservedScrollBarGap = {
     property,
     original: el.style.getPropertyValue(property),
     value,
+    width,
   };
   el.style.setProperty(property, value);
+}
+
+function widenedPadding(
+  el: HTMLElement | SVGElement,
+  property: "padding-left" | "padding-right",
+  width: number,
+): string {
+  const padding =
+    Number.parseFloat(
+      globalThis.window.getComputedStyle(el).getPropertyValue(property),
+    ) || 0;
+  return `${padding + width}px`;
+}
+
+/**
+ * A framework re-rendering the element's style binding writes over the lock. Its values
+ * become the ones to give back, and the lock is applied again before the next paint.
+ */
+function watchStyle(
+  el: HTMLElement | SVGElement,
+  state: LockState,
+): () => void {
+  const observer = new MutationObserver(() => {
+    if (el.style.overflowX !== "hidden") {
+      state.originalOverflowX = el.style.overflowX;
+      el.style.overflowX = "hidden";
+    }
+    if (el.style.overflowY !== "hidden") {
+      state.originalOverflowY = el.style.overflowY;
+      el.style.overflowY = "hidden";
+    }
+    const gap = state.reservedScrollBarGap;
+    if (gap && el.style.getPropertyValue(gap.property) !== gap.value) {
+      gap.original = el.style.getPropertyValue(gap.property);
+      if (gap.property !== "scrollbar-gutter")
+        gap.value = widenedPadding(el, gap.property, gap.width);
+      el.style.setProperty(gap.property, gap.value);
+    }
+  });
+  observer.observe(el, { attributes: true, attributeFilter: ["style"] });
+  return () => observer.disconnect();
 }
 
 function supportsStableGutter(): boolean {

@@ -227,12 +227,14 @@ interface LockState {
   originalOverflowY?: string;
   reservedScrollBarGap?: ReservedScrollBarGap;
   stopTouchEventListener?: () => void;
+  stopWatchingStyle?: () => void;
 }
 
 interface ReservedScrollBarGap {
   property: "scrollbar-gutter" | "padding-left" | "padding-right";
   original: string;
   value: string;
+  width: number;
 }
 ```
 
@@ -241,8 +243,9 @@ interface ReservedScrollBarGap {
 - `count: number` - Reference count for the lock
 - `originalOverflowX?: string` - Original inline overflow-x value
 - `originalOverflowY?: string` - Original inline overflow-y value
-- `reservedScrollBarGap?: ReservedScrollBarGap` - Present when `reserveScrollBarGap` kept the scrollbar's room: the property it set, its original inline value and the value it set
+- `reservedScrollBarGap?: ReservedScrollBarGap` - Present when `reserveScrollBarGap` kept the scrollbar's room: the property it set, its original inline value, the value it set and the scrollbar's width
 - `stopTouchEventListener?: () => void` - Function to cleanup the iOS touch event listeners
+- `stopWatchingStyle?: () => void` - Function to stop watching the element's style for writes over the lock
 
 ## Exported Constants
 

@@ -332,6 +332,58 @@ describe("reserveScrollBarGap", () => {
   });
 });
 
+describe("when the app rewrites the locked element's style", () => {
+  const nextTask = () => new Promise((resolve) => setTimeout(resolve));
+
+  beforeEach(() => {
+    clearAllScrollLocks();
+    document.body.removeAttribute("style");
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("locks again and gives back the app's latest overflow", async () => {
+    const panel = document.createElement("div");
+    panel.style.overflowY = "auto";
+    document.body.append(panel);
+    lockScroll(panel);
+
+    panel.style.overflowY = "scroll";
+    await nextTask();
+    expect(overflowOf(panel)).toEqual(LOCKED);
+
+    unlockScroll(panel);
+    expect(overflowOf(panel)).toEqual(["", "scroll"]);
+  });
+
+  it("reserves the scrollbar gap again when the app replaces the whole style", async () => {
+    const panel = document.createElement("div");
+    Object.defineProperties(panel, {
+      offsetWidth: { value: 220 },
+      clientWidth: { value: 200 },
+    });
+    document.body.append(panel);
+    lockScroll(panel, { reserveScrollBarGap: true });
+
+    panel.style.cssText = "height: 10px; overflow-y: auto";
+    await nextTask();
+    expect([...overflowOf(panel), panel.style.paddingRight]).toEqual([
+      "hidden",
+      "hidden",
+      "20px",
+    ]);
+
+    unlockScroll(panel);
+    expect([
+      panel.style.height,
+      ...overflowOf(panel),
+      panel.style.paddingRight,
+    ]).toEqual(["10px", "", "auto", ""]);
+  });
+});
+
 describe("iOS", () => {
   type ScrollLock = typeof import("../src");
   let ios: ScrollLock;
