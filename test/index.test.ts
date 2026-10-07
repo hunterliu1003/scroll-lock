@@ -429,6 +429,15 @@ describe("iOS", () => {
     );
   });
 
+  it("follows the finger when it turns back within one gesture", () => {
+    const list = scrollable(document.body, { scrollTop: 100 });
+    ios.lockScroll(document.body);
+
+    touch("touchstart", list, [100]);
+    expect(touch("touchmove", list, [300]).defaultPrevented).toBe(false);
+    expect(touch("touchmove", list, [250]).defaultPrevented).toBe(true);
+  });
+
   it("stops cancelling once the last lock is released", () => {
     ios.lockScroll(document.body);
     ios.lockScroll(document.body);

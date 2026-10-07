@@ -252,12 +252,13 @@ function isBrowser(): boolean {
  */
 function listenTouches(el: HTMLElement | SVGElement): () => void {
   let start = { x: 0, y: 0 };
+  let last = start;
 
   const onTouchStart = (event: Event) => {
     const { touches } = event as TouchEvent;
     const [first] = touches;
     if (touches.length === 1 && first)
-      start = { x: first.clientX, y: first.clientY };
+      start = last = { x: first.clientX, y: first.clientY };
   };
 
   const onTouchMove = (event: Event) => {
@@ -266,8 +267,14 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
     // More than one touch is usually a gesture such as pinch to zoom.
     if (!first || touches.length > 1) return;
 
-    const delta = { x: first.clientX - start.x, y: first.clientY - start.y };
-    if (canScroll(target as Element | null, delta, el)) return;
+    const point = { x: first.clientX, y: first.clientY };
+    /** The whole gesture picks the axis, so a jittery step cannot flip it; the last step picks the direction, so a finger turning back is followed. */
+    const horizontal =
+      Math.abs(point.x - start.x) > Math.abs(point.y - start.y);
+    const axis = horizontal ? "x" : "y";
+    const delta = point[axis] - last[axis] || point[axis] - start[axis];
+    last = point;
+    if (canScroll(target as Element | null, horizontal, delta, el)) return;
 
     event.preventDefault();
   };
@@ -283,17 +290,16 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
 
 /**
  * Whether an element between `target` and the locked `root` can still scroll along the
- * dominant axis of the gesture, in the direction the finger moves (positive is down or right).
+ * axis of the gesture, in the direction the finger moves (positive is down or right).
  */
 function canScroll(
   target: Element | null,
-  delta: { x: number; y: number },
+  horizontal: boolean,
+  delta: number,
   root: Element,
 ): boolean {
-  const horizontal = Math.abs(delta.x) > Math.abs(delta.y);
   for (let el = target; el && el !== root; el = el.parentElement) {
-    if (horizontal ? canScrollX(el, delta.x) : canScrollY(el, delta.y))
-      return true;
+    if (horizontal ? canScrollX(el, delta) : canScrollY(el, delta)) return true;
   }
   return false;
 }
