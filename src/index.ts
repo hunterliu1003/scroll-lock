@@ -358,10 +358,11 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
     if (!first || touches.length > 1) return;
 
     const point = { x: first.clientX, y: first.clientY };
-    /** The whole gesture picks the axis, so a jittery step cannot flip it; the last step picks the direction, so a finger turning back is followed. */
+    /** The whole gesture picks the axis, so a jittery step cannot flip it. */
     const horizontal =
       Math.abs(point.x - start.x) > Math.abs(point.y - start.y);
     const axis = horizontal ? "x" : "y";
+    /** The last step picks the direction, so a finger turning back is followed. */
     const delta = point[axis] - last[axis] || point[axis] - start[axis];
     last = point;
     if (canScroll(event.composedPath(), horizontal, delta, el)) return;
