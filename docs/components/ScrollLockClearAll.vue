@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { lockedElementSet, clearAllScrollLocks } from "../../src";
 
 const lockedElements = ref<(HTMLElement | SVGElement)[]>(
   Array.from(lockedElementSet),
 );
-setInterval(() => {
-  lockedElements.value = Array.from(lockedElementSet);
-}, 100);
+onMounted(() => {
+  setInterval(() => {
+    lockedElements.value = Array.from(lockedElementSet);
+  }, 100);
+});
 </script>
 
 <template>

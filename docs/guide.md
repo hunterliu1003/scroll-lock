@@ -114,4 +114,23 @@ clearAllScrollLocks();
 
 :::
 
+### Isolated Instances
+
+The functions exported from the package share one lock registry. `createScrollLock()` returns the same functions bound to a registry of their own, so a library or widget can count and clear its locks without touching the ones the app made:
+
+```ts
+import { createScrollLock, lockScroll } from "@hunterliu/scroll-lock";
+
+const drawerLocks = createScrollLock();
+const drawer = document.querySelector<HTMLElement>(".drawer");
+
+lockScroll(document.body);
+drawerLocks.lockScroll(drawer);
+
+// Unlocks the drawer, body stays locked
+drawerLocks.clearAllScrollLocks();
+```
+
+Instances do not know about each other, so lock a given element through one instance only.
+
 For complete API documentation, see the [API Reference](/api).

@@ -16,6 +16,7 @@ A lightweight, SSR-safe scroll locking library with reference counting support. 
 - 🎯 **Multiple targets** - Lock body, documentElement, or any HTMLElement
 - 📱 **iOS support** - Cancels touch scrolling on iOS, except inside elements that can still scroll
 - 📏 **Scrollbar gap** - Optionally keeps the layout still when the scrollbar disappears
+- 🧩 **Isolated instances** - `createScrollLock()` gives a library or widget its own lock registry
 - 🔧 **TypeScript** - Full type safety out of the box
 - ⚡ **Lightweight** - Minimal bundle size with zero dependencies
 - 🧹 **Clean restoration** - Properly restores original overflow styles
@@ -123,6 +124,24 @@ lockScroll(document.querySelector(".sidebar"));
 clearAllScrollLocks(); // all targets unlocked
 ```
 
+## Isolated Instances
+
+The functions exported from the package share one lock registry. `createScrollLock()` returns the same functions bound to a registry of their own, so a library or widget can count and clear its locks without touching the ones the app made:
+
+```ts
+import { createScrollLock, lockScroll } from "@hunterliu/scroll-lock";
+
+const drawerLocks = createScrollLock();
+const drawer = document.querySelector<HTMLElement>(".drawer");
+
+lockScroll(document.body); // the app's own lock
+drawerLocks.lockScroll(drawer);
+
+drawerLocks.clearAllScrollLocks(); // unlocks the drawer, body stays locked
+```
+
+Instances do not know about each other, so lock a given element through one instance only: when two instances lock the same element, one releasing it can make it scrollable while the other still counts it as locked.
+
 ## API Reference
 
 ### `lockScroll(target, options?)`
@@ -132,16 +151,14 @@ Lock scroll on target element.
 ```typescript
 function lockScroll(
   target: ScrollLockTarget,
-  options?: {
-    reserveScrollBarGap?: boolean;
-  },
+  options?: LockScrollOptions,
 ): LockState | undefined;
 ```
 
 **Parameters:**
 
 - `target: ScrollLockTarget` - Element to lock (defaults to `document.body` if `null`/`undefined`)
-- `options?` - Optional configuration object
+- `options?: LockScrollOptions` - Optional configuration object
   - `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right` (default: `false`)
 
 **Returns:**
@@ -195,6 +212,25 @@ Clear all scroll locks on all targets.
 function clearAllScrollLocks(): void;
 ```
 
+### `createScrollLock()`
+
+Create an isolated instance with its own lock registry.
+
+```typescript
+function createScrollLock(): {
+  lockScroll: typeof lockScroll;
+  unlockScroll: typeof unlockScroll;
+  isScrollLocked: typeof isScrollLocked;
+  clearAllScrollLocks: typeof clearAllScrollLocks;
+  lockStateMap: WeakMap<HTMLElement | SVGElement, LockState>;
+  lockedElementSet: Set<HTMLElement | SVGElement>;
+};
+```
+
+**Returns:**
+
+- The same functions and constants the package exports, bound to the new instance. The top-level exports are one shared instance created this way.
+
 ### Types
 
 #### `ScrollLockTarget`
@@ -216,6 +252,14 @@ type ScrollLockTarget =
 - `Document` - Targets `document.documentElement`
 - `null | undefined` - Defaults to `document.body`
 
+#### `LockScrollOptions`
+
+```typescript
+interface LockScrollOptions {
+  reserveScrollBarGap?: boolean;
+}
+```
+
 #### `LockState`
 
 ```typescript
@@ -230,7 +274,7 @@ interface LockState {
 
 ### Exported Constants
 
-Advanced usage - access internal state:
+Advanced usage - access the internal state of the shared instance:
 
 ```ts
 import { lockStateMap, lockedElementSet } from "@hunterliu/scroll-lock";

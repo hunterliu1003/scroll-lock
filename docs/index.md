@@ -21,7 +21,11 @@ features:
   - title: 🎯 Multiple targets
     details: Lock body, or any HTMLElement
   - title: 📱 iOS support
-    details: Special touch event handling for iOS devices
+    details: Cancels touch scrolling on iOS, except inside elements that can still scroll
+  - title: 📏 Scrollbar gap
+    details: Optionally keeps the layout still when the scrollbar disappears
+  - title: 🧩 Isolated instances
+    details: createScrollLock() gives a library or widget its own lock registry
   - title: 🔧 TypeScript
     details: Full type safety out of the box
   - title: ⚡ Lightweight

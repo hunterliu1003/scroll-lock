@@ -15,16 +15,14 @@ Locks scroll on the specified target element. Multiple calls on the same element
 ```typescript
 function lockScroll(
   target: ScrollLockTarget,
-  options?: {
-    reserveScrollBarGap?: boolean;
-  },
+  options?: LockScrollOptions,
 ): LockState | undefined;
 ```
 
 **Parameters:**
 
 - `target: ScrollLockTarget` - Element to lock (default: `document.body` if null/undefined)
-- `options?` - Optional configuration object
+- `options?: LockScrollOptions` - Optional configuration object
   - `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right`, measured by the first lock and restored by the last unlock (default: `false`)
 
 **Returns:**
@@ -141,6 +139,46 @@ lockScroll(document.querySelector(".sidebar"));
 clearAllScrollLocks();
 ```
 
+### `createScrollLock()`
+
+Creates an isolated instance with its own lock registry. Reference counts, `isScrollLocked()` and `clearAllScrollLocks()` of an instance only see the locks made through it.
+
+```typescript
+function createScrollLock(): {
+  lockScroll: typeof lockScroll;
+  unlockScroll: typeof unlockScroll;
+  isScrollLocked: typeof isScrollLocked;
+  clearAllScrollLocks: typeof clearAllScrollLocks;
+  lockStateMap: WeakMap<HTMLElement | SVGElement, LockState>;
+  lockedElementSet: Set<HTMLElement | SVGElement>;
+};
+```
+
+**Returns:**
+
+- The same functions and constants the package exports, bound to the new instance. The top-level exports are one shared instance created this way.
+
+**Example:**
+
+```js
+import { createScrollLock, lockScroll } from "@hunterliu/scroll-lock";
+
+const drawerLocks = createScrollLock();
+const drawer = document.querySelector(".drawer");
+
+lockScroll(document.body);
+drawerLocks.lockScroll(drawer);
+
+console.log(drawerLocks.isScrollLocked(document.body)); // false
+
+// Unlocks the drawer, body stays locked
+drawerLocks.clearAllScrollLocks();
+```
+
+::: warning
+Instances do not know about each other, so lock a given element through one instance only. When two instances lock the same element, one releasing it can make it scrollable while the other still counts it as locked.
+:::
+
 ## Types
 
 ### `ScrollLockTarget`
@@ -163,6 +201,20 @@ type ScrollLockTarget =
 - `Window` - Targets `window.document.documentElement`
 - `Document` - Targets `document.documentElement`
 - `null | undefined` - Defaults to `document.body`
+
+### `LockScrollOptions`
+
+Options accepted by `lockScroll()`.
+
+```typescript
+interface LockScrollOptions {
+  reserveScrollBarGap?: boolean;
+}
+```
+
+**Properties:**
+
+- `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right` (default: `false`)
 
 ### `LockState`
 
@@ -187,6 +239,8 @@ interface LockState {
 - `stopTouchEventListener?: () => void` - Function to cleanup the iOS touch event listeners
 
 ## Exported Constants
+
+The state of the shared instance behind the top-level functions. An instance from `createScrollLock()` returns its own pair.
 
 ### `lockStateMap`
 

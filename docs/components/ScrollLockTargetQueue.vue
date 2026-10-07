@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { isScrollLocked, lockScroll, unlockScroll } from "../../src";
-import { ref, useTemplateRef } from "vue";
+import { onMounted, ref, useTemplateRef } from "vue";
 
 const lockTargetEl = useTemplateRef<HTMLElement>("lockTargetEl");
 const count = ref(0);
@@ -20,9 +20,11 @@ function unlockForce() {
   count.value = state?.count ?? 0;
 }
 
-setInterval(() => {
-  count.value = isScrollLocked(lockTargetEl.value) ? count.value : 0;
-}, 100);
+onMounted(() => {
+  setInterval(() => {
+    count.value = isScrollLocked(lockTargetEl.value) ? count.value : 0;
+  }, 100);
+});
 </script>
 
 <template>
