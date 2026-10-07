@@ -298,6 +298,9 @@ function canScroll(
   return false;
 }
 
+/** Scroll offsets are fractional on high-density screens, so less than a pixel from an edge counts as at it. */
+const EDGE = 1;
+
 function canScrollY(el: Element, delta: number): boolean {
   if (
     !isScrollable(
@@ -308,8 +311,8 @@ function canScrollY(el: Element, delta: number): boolean {
   )
     return false;
   return delta > 0
-    ? el.scrollTop > 0
-    : delta < 0 && el.scrollTop + el.clientHeight < el.scrollHeight;
+    ? el.scrollTop >= EDGE
+    : delta < 0 && el.scrollTop + el.clientHeight <= el.scrollHeight - EDGE;
 }
 
 function canScrollX(el: Element, delta: number): boolean {
@@ -322,8 +325,8 @@ function canScrollX(el: Element, delta: number): boolean {
   )
     return false;
   return delta > 0
-    ? el.scrollLeft > 0
-    : delta < 0 && el.scrollLeft + el.clientWidth < el.scrollWidth;
+    ? el.scrollLeft >= EDGE
+    : delta < 0 && el.scrollLeft + el.clientWidth <= el.scrollWidth - EDGE;
 }
 
 function isScrollable(

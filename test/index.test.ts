@@ -405,6 +405,30 @@ describe("iOS", () => {
     );
   });
 
+  it("treats a scroller less than a pixel from an edge as at that edge", () => {
+    const list = scrollable(document.body, { scrollTop: 99.67 });
+    const carousel = scrollable(document.body, {
+      overflowX: "auto",
+      scrollLeft: 199.6,
+      scrollWidth: 400,
+      clientWidth: 200,
+      scrollHeight: 100,
+    });
+    ios.lockScroll(document.body);
+
+    touch("touchstart", list, [100]);
+    expect(touch("touchmove", list, [50]).defaultPrevented).toBe(true);
+
+    list.scrollTop = 0.4;
+    touch("touchstart", list, [100]);
+    expect(touch("touchmove", list, [150]).defaultPrevented).toBe(true);
+
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[50, 100]]).defaultPrevented).toBe(
+      true,
+    );
+  });
+
   it("stops cancelling once the last lock is released", () => {
     ios.lockScroll(document.body);
     ios.lockScroll(document.body);
