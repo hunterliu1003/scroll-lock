@@ -262,7 +262,7 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
   };
 
   const onTouchMove = (event: Event) => {
-    const { touches, target } = event as TouchEvent;
+    const { touches } = event as TouchEvent;
     const [first] = touches;
     // More than one touch is usually a gesture such as pinch to zoom.
     if (!first || touches.length > 1) return;
@@ -274,7 +274,7 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
     const axis = horizontal ? "x" : "y";
     const delta = point[axis] - last[axis] || point[axis] - start[axis];
     last = point;
-    if (canScroll(target as Element | null, horizontal, delta, el)) return;
+    if (canScroll(event.composedPath(), horizontal, delta, el)) return;
 
     event.preventDefault();
   };
@@ -289,17 +289,23 @@ function listenTouches(el: HTMLElement | SVGElement): () => void {
 }
 
 /**
- * Whether an element between `target` and the locked `root` can still scroll along the
+ * Whether an element on the event's path below the locked `root` can still scroll along the
  * axis of the gesture, in the direction the finger moves (positive is down or right).
+ * The composed path reaches into shadow roots, which the retargeted `event.target` hides.
  */
 function canScroll(
-  target: Element | null,
+  path: EventTarget[],
   horizontal: boolean,
   delta: number,
   root: Element,
 ): boolean {
-  for (let el = target; el && el !== root; el = el.parentElement) {
-    if (horizontal ? canScrollX(el, delta) : canScrollY(el, delta)) return true;
+  for (const node of path) {
+    if (node === root) return false;
+    if (
+      node instanceof Element &&
+      (horizontal ? canScrollX(node, delta) : canScrollY(node, delta))
+    )
+      return true;
   }
   return false;
 }

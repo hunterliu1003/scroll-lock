@@ -7,7 +7,7 @@ import {
 } from "../src";
 
 function scrollable(
-  parent: Element,
+  parent: ParentNode,
   {
     scrollTop = 0,
     scrollHeight = 200,
@@ -39,7 +39,11 @@ function touch(
   target: Element,
   points: (number | [number, number])[],
 ) {
-  const event = new Event(type, { bubbles: true, cancelable: true });
+  const event = new Event(type, {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+  });
   const touches = points.map((point) =>
     Array.isArray(point)
       ? { clientX: point[0], clientY: point[1] }
@@ -467,6 +471,18 @@ describe("iOS", () => {
     expect(touch("touchmove", carousel, [[50, 100]]).defaultPrevented).toBe(
       false,
     );
+  });
+
+  it("lets a scroller inside a shadow root scroll", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const list = scrollable(host.attachShadow({ mode: "open" }), {
+      scrollTop: 50,
+    });
+    ios.lockScroll(document.body);
+
+    touch("touchstart", list, [100]);
+    expect(touch("touchmove", list, [150]).defaultPrevented).toBe(false);
   });
 
   it("stops cancelling once the last lock is released", () => {
