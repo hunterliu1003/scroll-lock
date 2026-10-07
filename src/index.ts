@@ -31,7 +31,8 @@ export interface LockScrollOptions {
 
 export interface LockState {
   count: number;
-  originalOverflow?: string;
+  originalOverflowX?: string;
+  originalOverflowY?: string;
   originalPaddingRight?: string;
   stopTouchEventListener?: () => void;
 }
@@ -151,7 +152,8 @@ function applyLock(
   if (!state) {
     state = {
       count: 0,
-      originalOverflow: el.style.overflow,
+      originalOverflowX: el.style.overflowX,
+      originalOverflowY: el.style.overflowY,
     };
 
     if (isIOS) {
@@ -164,7 +166,9 @@ function applyLock(
   if (state.count === 0) {
     // The gap must be measured while the scrollbar is still there.
     if (options?.reserveScrollBarGap) reserveScrollBarGap(el, state);
-    el.style.overflow = "hidden";
+    // Longhands, because restoring the shorthand would also drop an overflow-x or overflow-y set on its own.
+    el.style.overflowX = "hidden";
+    el.style.overflowY = "hidden";
   }
 
   state.count += 1;
@@ -183,11 +187,8 @@ function restoreElement(
   if (isIOS) {
     state.stopTouchEventListener?.();
   }
-  if (state.originalOverflow) {
-    el.style.overflow = state.originalOverflow;
-  } else {
-    el.style.removeProperty("overflow");
-  }
+  el.style.overflowX = state.originalOverflowX ?? "";
+  el.style.overflowY = state.originalOverflowY ?? "";
   if (state.originalPaddingRight !== undefined) {
     if (state.originalPaddingRight) {
       el.style.paddingRight = state.originalPaddingRight;

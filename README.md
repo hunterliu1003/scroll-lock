@@ -221,7 +221,8 @@ type ScrollLockTarget =
 ```typescript
 interface LockState {
   count: number;
-  originalOverflow?: string;
+  originalOverflowX?: string;
+  originalOverflowY?: string;
   originalPaddingRight?: string;
   stopTouchEventListener?: () => void;
 }

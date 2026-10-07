@@ -171,7 +171,8 @@ Interface representing the state of a locked element.
 ```typescript
 interface LockState {
   count: number;
-  originalOverflow?: string;
+  originalOverflowX?: string;
+  originalOverflowY?: string;
   originalPaddingRight?: string;
   stopTouchEventListener?: () => void;
 }
@@ -180,7 +181,8 @@ interface LockState {
 **Properties:**
 
 - `count: number` - Reference count for the lock
-- `originalOverflow?: string` - Original overflow style value
+- `originalOverflowX?: string` - Original inline overflow-x value
+- `originalOverflowY?: string` - Original inline overflow-y value
 - `originalPaddingRight?: string` - Original padding-right value, present when `reserveScrollBarGap` added to it
 - `stopTouchEventListener?: () => void` - Function to cleanup the iOS touch event listeners
 

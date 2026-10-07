@@ -53,28 +53,35 @@ function touch(
   return event;
 }
 
+/** jsdom does not expand the overflow shorthand into its longhands, so the lock is read from the longhands themselves. */
+function overflowOf(el: HTMLElement) {
+  return [el.style.overflowX, el.style.overflowY];
+}
+const LOCKED = ["hidden", "hidden"];
+const UNLOCKED = ["", ""];
+
 describe("scroll-lock", () => {
   beforeEach(() => {
     // Force clear all locks before each test to avoid interference
     clearAllScrollLocks();
 
     // Ensure body style is clean
-    document.body.style.overflow = "";
+    document.body.removeAttribute("style");
   });
 
   it("locks and unlocks body scroll", () => {
     expect(isScrollLocked(document.body)).toBe(false);
-    expect(document.body.style.overflow).toBe("");
+    expect(overflowOf(document.body)).toEqual(UNLOCKED);
 
     lockScroll(document.body);
 
     expect(isScrollLocked(document.body)).toBe(true);
-    expect(document.body.style.overflow).toBe("hidden");
+    expect(overflowOf(document.body)).toEqual(LOCKED);
 
     unlockScroll(document.body);
 
     expect(isScrollLocked(document.body)).toBe(false);
-    expect(document.body.style.overflow).toBe("");
+    expect(overflowOf(document.body)).toEqual(UNLOCKED);
   });
 
   it("respects reference counting for the same target", () => {
@@ -83,17 +90,17 @@ describe("scroll-lock", () => {
 
     // After two locks, overflow is still just hidden
     expect(isScrollLocked(document.body)).toBe(true);
-    expect(document.body.style.overflow).toBe("hidden");
+    expect(overflowOf(document.body)).toEqual(LOCKED);
 
     // First unlock doesn't restore style
     unlockScroll(document.body);
     expect(isScrollLocked(document.body)).toBe(true);
-    expect(document.body.style.overflow).toBe("hidden");
+    expect(overflowOf(document.body)).toEqual(LOCKED);
 
     // Second unlock actually unlocks
     unlockScroll(document.body);
     expect(isScrollLocked(document.body)).toBe(false);
-    expect(document.body.style.overflow).toBe("");
+    expect(overflowOf(document.body)).toEqual(UNLOCKED);
   });
 
   it("force unlock ignores reference count", () => {
@@ -104,7 +111,7 @@ describe("scroll-lock", () => {
     unlockScroll(document.body, { force: true });
 
     expect(isScrollLocked(document.body)).toBe(false);
-    expect(document.body.style.overflow).toBe("");
+    expect(overflowOf(document.body)).toEqual(UNLOCKED);
   });
 
   it("handles multiple targets independently", () => {
@@ -116,20 +123,20 @@ describe("scroll-lock", () => {
 
     expect(isScrollLocked(document.body)).toBe(true);
     expect(isScrollLocked(panel)).toBe(true);
-    expect(document.body.style.overflow).toBe("hidden");
-    expect(panel.style.overflow).toBe("hidden");
+    expect(overflowOf(document.body)).toEqual(LOCKED);
+    expect(overflowOf(panel)).toEqual(LOCKED);
 
     // Unlock panel, doesn't affect body
     unlockScroll(panel);
     expect(isScrollLocked(document.body)).toBe(true); // body still locked
     expect(isScrollLocked(panel)).toBe(false);
-    expect(document.body.style.overflow).toBe("hidden");
-    expect(panel.style.overflow).toBe("");
+    expect(overflowOf(document.body)).toEqual(LOCKED);
+    expect(overflowOf(panel)).toEqual(UNLOCKED);
 
     // Unlock body
     unlockScroll(document.body);
     expect(isScrollLocked(document.body)).toBe(false);
-    expect(document.body.style.overflow).toBe("");
+    expect(overflowOf(document.body)).toEqual(UNLOCKED);
   });
 
   it("clearAllScrollLocks restores all targets", () => {
@@ -147,18 +154,29 @@ describe("scroll-lock", () => {
 
     expect(isScrollLocked(document.body)).toBe(false);
     expect(isScrollLocked(panel)).toBe(false);
-    expect(document.body.style.overflow).toBe("");
-    expect(panel.style.overflow).toBe("");
+    expect(overflowOf(document.body)).toEqual(UNLOCKED);
+    expect(overflowOf(panel)).toEqual(UNLOCKED);
   });
 
-  it("restores the overflow the target had before", () => {
-    document.body.style.overflow = "auto";
+  it("gives back an inline overflow-y the target had", () => {
+    document.body.style.overflowY = "auto";
 
     lockScroll(document.body);
-    expect(document.body.style.overflow).toBe("hidden");
+    expect(overflowOf(document.body)).toEqual(LOCKED);
 
     unlockScroll(document.body);
-    expect(document.body.style.overflow).toBe("auto");
+    expect(overflowOf(document.body)).toEqual(["", "auto"]);
+  });
+
+  it("gives back inline overflow-x and overflow-y that differ", () => {
+    document.body.style.overflowX = "hidden";
+    document.body.style.overflowY = "scroll";
+
+    lockScroll(document.body);
+    expect(overflowOf(document.body)).toEqual(LOCKED);
+
+    unlockScroll(document.body);
+    expect(overflowOf(document.body)).toEqual(["hidden", "scroll"]);
   });
 
   it("installs no touch listeners off iOS", () => {
