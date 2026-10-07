@@ -438,6 +438,37 @@ describe("iOS", () => {
     expect(touch("touchmove", list, [250]).defaultPrevented).toBe(true);
   });
 
+  it("measures a right-to-left scroller from its right edge", () => {
+    const carousel = scrollable(document.body, {
+      overflowX: "auto",
+      scrollWidth: 400,
+      clientWidth: 200,
+      scrollHeight: 100,
+    });
+    carousel.style.direction = "rtl";
+    ios.lockScroll(document.body);
+
+    carousel.scrollLeft = 0;
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[150, 100]]).defaultPrevented).toBe(
+      false,
+    );
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[50, 100]]).defaultPrevented).toBe(
+      true,
+    );
+
+    carousel.scrollLeft = -200;
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[150, 100]]).defaultPrevented).toBe(
+      true,
+    );
+    touch("touchstart", carousel, [[100, 100]]);
+    expect(touch("touchmove", carousel, [[50, 100]]).defaultPrevented).toBe(
+      false,
+    );
+  });
+
   it("stops cancelling once the last lock is released", () => {
     ios.lockScroll(document.body);
     ios.lockScroll(document.body);

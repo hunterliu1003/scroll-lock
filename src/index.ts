@@ -322,17 +322,17 @@ function canScrollY(el: Element, delta: number): boolean {
 }
 
 function canScrollX(el: Element, delta: number): boolean {
-  if (
-    !isScrollable(
-      globalThis.window.getComputedStyle(el).overflowX,
-      el.scrollWidth,
-      el.clientWidth,
-    )
-  )
+  const style = globalThis.window.getComputedStyle(el);
+  if (!isScrollable(style.overflowX, el.scrollWidth, el.clientWidth))
     return false;
+  /** A right-to-left scroller's scrollLeft runs from 0 at its right edge to negative values toward its left edge. */
+  const fromLeft =
+    style.direction === "rtl"
+      ? el.scrollLeft + el.scrollWidth - el.clientWidth
+      : el.scrollLeft;
   return delta > 0
-    ? el.scrollLeft >= EDGE
-    : delta < 0 && el.scrollLeft + el.clientWidth <= el.scrollWidth - EDGE;
+    ? fromLeft >= EDGE
+    : delta < 0 && fromLeft + el.clientWidth <= el.scrollWidth - EDGE;
 }
 
 function isScrollable(
