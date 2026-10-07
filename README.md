@@ -92,7 +92,7 @@ unlockScroll(document.body, { force: true }); // immediately unlocked
 
 ## Scrollbar Gap
 
-When the scrollbar of a locked element disappears, its content shifts by the scrollbar's width. `reserveScrollBarGap` adds that width to the element's `padding-right` for the duration of the lock:
+When the scrollbar of a locked element disappears, its content shifts by the scrollbar's width. `reserveScrollBarGap` keeps that room for the duration of the lock. The body gets the width as `padding-right`. Any other element keeps a stable `scrollbar-gutter` where the browser supports it, and otherwise gets the width as padding on its scrollbar's side, the left for a right-to-left element. Nothing is added when the gutter is already stable.
 
 ```ts
 lockScroll(document.body, { reserveScrollBarGap: true });
@@ -102,7 +102,7 @@ unlockScroll(document.body);
 // padding-right is restored
 ```
 
-The gap is measured by the first lock and restored by the last unlock, so nested locks never add it twice.
+The gap is reserved by the first lock and restored by the last unlock, so nested locks never add it twice.
 
 ## iOS
 
@@ -159,7 +159,7 @@ function lockScroll(
 
 - `target: ScrollLockTarget` - Element to lock (defaults to `document.body` if `null`/`undefined`)
 - `options?: LockScrollOptions` - Optional configuration object
-  - `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right` (default: `false`)
+  - `reserveScrollBarGap?: boolean` - Keep the room of the disappearing scrollbar, see [Scrollbar Gap](#scrollbar-gap) (default: `false`)
 
 **Returns:**
 
@@ -267,8 +267,14 @@ interface LockState {
   count: number;
   originalOverflowX?: string;
   originalOverflowY?: string;
-  originalPaddingRight?: string;
+  reservedScrollBarGap?: ReservedScrollBarGap;
   stopTouchEventListener?: () => void;
+}
+
+interface ReservedScrollBarGap {
+  property: "scrollbar-gutter" | "padding-left" | "padding-right";
+  original: string;
+  value: string;
 }
 ```
 

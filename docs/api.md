@@ -23,7 +23,7 @@ function lockScroll(
 
 - `target: ScrollLockTarget` - Element to lock (default: `document.body` if null/undefined)
 - `options?: LockScrollOptions` - Optional configuration object
-  - `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right`, measured by the first lock and restored by the last unlock (default: `false`)
+  - `reserveScrollBarGap?: boolean` - Keep the room of the disappearing scrollbar, reserved by the first lock and restored by the last unlock (default: `false`). The body gets the width as `padding-right`. Any other element keeps a stable `scrollbar-gutter` where the browser supports it, and otherwise gets the width as padding on its scrollbar's side, the left for a right-to-left element. Nothing is added when the gutter is already stable.
 
 **Returns:**
 
@@ -214,7 +214,7 @@ interface LockScrollOptions {
 
 **Properties:**
 
-- `reserveScrollBarGap?: boolean` - Add the width of the disappearing scrollbar to the target's `padding-right` (default: `false`)
+- `reserveScrollBarGap?: boolean` - Keep the room of the disappearing scrollbar (default: `false`). The body gets the width as `padding-right`. Any other element keeps a stable `scrollbar-gutter` where the browser supports it, and otherwise gets the width as padding on its scrollbar's side, the left for a right-to-left element. Nothing is added when the gutter is already stable.
 
 ### `LockState`
 
@@ -225,8 +225,14 @@ interface LockState {
   count: number;
   originalOverflowX?: string;
   originalOverflowY?: string;
-  originalPaddingRight?: string;
+  reservedScrollBarGap?: ReservedScrollBarGap;
   stopTouchEventListener?: () => void;
+}
+
+interface ReservedScrollBarGap {
+  property: "scrollbar-gutter" | "padding-left" | "padding-right";
+  original: string;
+  value: string;
 }
 ```
 
@@ -235,7 +241,7 @@ interface LockState {
 - `count: number` - Reference count for the lock
 - `originalOverflowX?: string` - Original inline overflow-x value
 - `originalOverflowY?: string` - Original inline overflow-y value
-- `originalPaddingRight?: string` - Original padding-right value, present when `reserveScrollBarGap` added to it
+- `reservedScrollBarGap?: ReservedScrollBarGap` - Present when `reserveScrollBarGap` kept the scrollbar's room: the property it set, its original inline value and the value it set
 - `stopTouchEventListener?: () => void` - Function to cleanup the iOS touch event listeners
 
 ## Exported Constants

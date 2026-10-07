@@ -84,7 +84,7 @@ unlockScroll(element, { force: true });
 
 ### Keeping the Layout Still
 
-When the scrollbar disappears, the page content shifts by its width. Pass `reserveScrollBarGap` to add that width to the target's `padding-right` while it is locked:
+When the scrollbar disappears, the page content shifts by its width. Pass `reserveScrollBarGap` to keep that room while the target is locked. The body gets the width as `padding-right`. Any other element keeps a stable `scrollbar-gutter` where the browser supports it, and otherwise gets the width as padding on its scrollbar's side, the left for a right-to-left element. Nothing is added when the gutter is already stable.
 
 ```ts
 import { lockScroll, unlockScroll } from "@hunterliu/scroll-lock";

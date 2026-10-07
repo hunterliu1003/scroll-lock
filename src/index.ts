@@ -23,17 +23,25 @@ export type ScrollLockTarget =
 
 export interface LockScrollOptions {
   /**
-   * Add the width of the scrollbar that disappears to the target's `padding-right`,
-   * so its content does not shift. Measured when the first lock is applied and restored with the last unlock.
+   * Keep the room of the scrollbar that disappears, so the target's content does not shift:
+   * an element keeps a stable `scrollbar-gutter` where the browser supports it, and otherwise
+   * gets the width as padding on its scrollbar's side; the body gets it as `padding-right`.
+   * Nothing is added when the gutter is already stable. Applied with the first lock and restored with the last unlock.
    */
   reserveScrollBarGap?: boolean;
+}
+
+export interface ReservedScrollBarGap {
+  property: "scrollbar-gutter" | "padding-left" | "padding-right";
+  original: string;
+  value: string;
 }
 
 export interface LockState {
   count: number;
   originalOverflowX?: string;
   originalOverflowY?: string;
-  originalPaddingRight?: string;
+  reservedScrollBarGap?: ReservedScrollBarGap;
   stopTouchEventListener?: () => void;
 }
 
@@ -189,11 +197,12 @@ function restoreElement(
   }
   el.style.overflowX = state.originalOverflowX ?? "";
   el.style.overflowY = state.originalOverflowY ?? "";
-  if (state.originalPaddingRight !== undefined) {
-    if (state.originalPaddingRight) {
-      el.style.paddingRight = state.originalPaddingRight;
+  if (state.reservedScrollBarGap) {
+    const { property, original } = state.reservedScrollBarGap;
+    if (original) {
+      el.style.setProperty(property, original);
     } else {
-      el.style.removeProperty("padding-right");
+      el.style.removeProperty(property);
     }
   }
 
@@ -208,10 +217,44 @@ function reserveScrollBarGap(
   const gap = scrollBarGap(el);
   if (gap <= 0) return;
 
-  const paddingRight =
-    Number.parseFloat(globalThis.window.getComputedStyle(el).paddingRight) || 0;
-  state.originalPaddingRight = el.style.paddingRight;
-  el.style.paddingRight = `${paddingRight + gap}px`;
+  const page = el === document.body || el === document.documentElement;
+  /** The page's scrollbar belongs to the viewport, whose gutter is set on the root element. */
+  const gutter = globalThis.window
+    .getComputedStyle(page ? document.documentElement : el)
+    .getPropertyValue("scrollbar-gutter");
+  if (gutter.startsWith("stable")) return;
+
+  if (!page && supportsStableGutter()) {
+    reserve(el, state, "scrollbar-gutter", "stable");
+    return;
+  }
+
+  const style = globalThis.window.getComputedStyle(el);
+  /** A right-to-left element shows its scrollbar on the left. */
+  const property =
+    !page && style.direction === "rtl" ? "padding-left" : "padding-right";
+  const padding = Number.parseFloat(style.getPropertyValue(property)) || 0;
+  reserve(el, state, property, `${padding + gap}px`);
+}
+
+function reserve(
+  el: HTMLElement | SVGElement,
+  state: LockState,
+  property: ReservedScrollBarGap["property"],
+  value: string,
+): void {
+  state.reservedScrollBarGap = {
+    property,
+    original: el.style.getPropertyValue(property),
+    value,
+  };
+  el.style.setProperty(property, value);
+}
+
+function supportsStableGutter(): boolean {
+  return (
+    typeof CSS !== "undefined" && CSS.supports("scrollbar-gutter", "stable")
+  );
 }
 
 function scrollBarGap(el: HTMLElement | SVGElement): number {

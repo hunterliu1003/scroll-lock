@@ -263,6 +263,73 @@ describe("reserveScrollBarGap", () => {
 
     expect(panel.style.paddingRight).toBe("");
   });
+
+  describe("around the scrollbar gutter", () => {
+    function panelWithScrollbar() {
+      const panel = document.createElement("div");
+      Object.defineProperties(panel, {
+        offsetWidth: { value: 220 },
+        clientWidth: { value: 200 },
+      });
+      document.body.append(panel);
+      return panel;
+    }
+
+    afterEach(() => {
+      document.documentElement.removeAttribute("style");
+      vi.unstubAllGlobals();
+    });
+
+    it("adds nothing to a target that keeps a stable scrollbar gutter", () => {
+      const panel = panelWithScrollbar();
+      panel.style.setProperty("scrollbar-gutter", "stable");
+
+      lockScroll(panel, { reserveScrollBarGap: true });
+
+      expect(panel.style.paddingRight).toBe("");
+    });
+
+    it("adds nothing to the body when the page keeps a stable scrollbar gutter", () => {
+      document.documentElement.style.setProperty("scrollbar-gutter", "stable");
+
+      lockScroll(document.body, { reserveScrollBarGap: true });
+
+      expect(document.body.style.paddingRight).toBe("");
+    });
+
+    it("pads the left of a right-to-left target, where its scrollbar is", () => {
+      const panel = panelWithScrollbar();
+      panel.style.direction = "rtl";
+
+      lockScroll(panel, { reserveScrollBarGap: true });
+      expect([panel.style.paddingLeft, panel.style.paddingRight]).toEqual([
+        "20px",
+        "",
+      ]);
+
+      unlockScroll(panel);
+      expect(panel.style.paddingLeft).toBe("");
+    });
+
+    it("keeps the scrollbar gutter instead of padding where the browser supports it", () => {
+      vi.stubGlobal("CSS", {
+        supports: (property: string, value: string) =>
+          property === "scrollbar-gutter" && value === "stable",
+      });
+      const panel = panelWithScrollbar();
+      panel.style.boxSizing = "content-box";
+      panel.style.width = "320px";
+
+      lockScroll(panel, { reserveScrollBarGap: true });
+      expect([
+        panel.style.getPropertyValue("scrollbar-gutter"),
+        panel.style.paddingRight,
+      ]).toEqual(["stable", ""]);
+
+      unlockScroll(panel);
+      expect(panel.style.getPropertyValue("scrollbar-gutter")).toBe("");
+    });
+  });
 });
 
 describe("iOS", () => {
