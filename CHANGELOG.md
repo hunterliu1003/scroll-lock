@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.0.9
+
+[compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.8...v0.0.9)
+
+### 🩹 Fixes
+
+- Leave a gap another lock reserved instead of rewriting it ([3708037](https://github.com/hunterliu1003/scroll-lock/commit/3708037))
+
+### ❤️ Contributors
+
+- Hunter Liu ([@hunterliu1003](https://github.com/hunterliu1003))
+
 ## v0.0.8
 
 [compare changes](https://github.com/hunterliu1003/scroll-lock/compare/v0.0.7...v0.0.8)
