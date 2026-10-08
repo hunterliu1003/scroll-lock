@@ -96,7 +96,7 @@ unlockScroll(document.body);
 
 ### Style Written Over a Lock
 
-A framework that re-renders a locked element's style binding writes over the lock. The lock watches the element's `style` attribute, takes the values written as the ones to give back on unlock, and applies itself again before the next paint, scrollbar gap included.
+A framework that re-renders a locked element's style binding writes over the lock. The lock watches the element's `style` attribute, takes the values written as the ones to give back on unlock, and applies itself again before the next paint. The scrollbar gap is put back when the write removed it; a gap someone else wrote, such as another lock's, is left as it is.
 
 ### iOS
 

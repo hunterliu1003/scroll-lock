@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
+  createScrollLock,
   lockScroll,
   unlockScroll,
   isScrollLocked,
@@ -356,6 +357,26 @@ describe("when the app rewrites the locked element's style", () => {
 
     unlockScroll(panel);
     expect(overflowOf(panel)).toEqual(["", "scroll"]);
+  });
+
+  it("leaves alone the padding another lock reserved on the same element", async () => {
+    const other = createScrollLock();
+    const panel = document.createElement("div");
+    Object.defineProperties(panel, {
+      offsetWidth: { value: 220 },
+      clientWidth: { value: 200 },
+    });
+    document.body.append(panel);
+    try {
+      lockScroll(panel, { reserveScrollBarGap: true });
+      other.lockScroll(panel, { reserveScrollBarGap: true });
+      for (let turn = 0; turn < 10; turn++) await Promise.resolve();
+
+      expect(panel.style.paddingRight).toBe("40px");
+    } finally {
+      other.clearAllScrollLocks();
+      clearAllScrollLocks();
+    }
   });
 
   it("reserves the scrollbar gap again when the app replaces the whole style", async () => {

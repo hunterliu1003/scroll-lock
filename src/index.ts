@@ -287,8 +287,9 @@ function watchStyle(
       el.style.overflowY = "hidden";
     }
     const gap = state.reservedScrollBarGap;
-    if (gap && el.style.getPropertyValue(gap.property) !== gap.value) {
-      gap.original = el.style.getPropertyValue(gap.property);
+    /** Only a removed gap is put back: rewriting a value someone else wrote, such as another lock's padding, would have the two rewrite each other forever. */
+    if (gap && !el.style.getPropertyValue(gap.property)) {
+      gap.original = "";
       if (gap.property !== "scrollbar-gutter")
         gap.value = widenedPadding(el, gap.property, gap.width);
       el.style.setProperty(gap.property, gap.value);
