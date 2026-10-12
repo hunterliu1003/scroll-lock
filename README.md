@@ -1,5 +1,8 @@
 # @hunterliu/scroll-lock
 
+> [!IMPORTANT]
+> `@hunterliu/scroll-lock` now lives in the [vue-final-modal monorepo](https://github.com/vue-final/vue-final-modal/tree/v5/packages/scroll-lock). Please open [issues](https://github.com/vue-final/vue-final-modal/issues) and pull requests there. This repository is no longer updated.
+
 <!-- automd:badges color=yellow -->
 
 [![npm version](https://img.shields.io/npm/v/@hunterliu/scroll-lock?color=yellow)](https://npmjs.com/package/@hunterliu/scroll-lock)
